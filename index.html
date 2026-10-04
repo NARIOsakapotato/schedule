@@ -1,0 +1,654 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>週間スケジュール｜オオサカポテト</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=BIZ+UDPGothic:wght@400;700&display=swap">
+<style>
+:root{
+  --ink:#1d2320;--sub:#545c57;--line:#dfe3df;--line2:#eef0ec;--bg:#f4f5f3;--card:#fff;--soft:#f7f8f6;
+  --prod:#2c6a3b;--prod-bg:#e6f0e7;--dist:#1f5f99;--dist-bg:#e5eef8;--sales:#a3541c;--sales-bg:#fbeee2;
+  --rout:#4a3577;--rout-bg:#f1edf8;--warn:#7a2e0a;--warn-bg:#fbe4d6;--warn-line:#e9b89c;--caut:#5c4300;--caut-bg:#fdf5dc;
+  --ok:#1d5a2c;--ok-bg:#e3f1e6;--rain:#1c4f8a;--rain-bg:#e3eefb;--ship:#5a3d8a;--ship-bg:#efe9f7;
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:'BIZ UDPGothic',system-ui,sans-serif;font-size:15px;line-height:1.5;-webkit-text-size-adjust:100%}
+button,input,textarea,select{font:inherit;color:inherit}
+button{cursor:pointer}
+a{color:var(--dist)}
+[hidden]{display:none!important}
+.wrap{max-width:1400px;margin:0 auto;padding:0 12px}
+/* header */
+.top{position:sticky;top:0;z-index:20;background:#1d2320;color:#fff;padding:8px 0 0;padding-top:calc(8px + env(safe-area-inset-top))}
+.top .row{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;justify-content:space-between}
+.brand{display:flex;flex-direction:column;line-height:1.2}
+.brand small{font-size:11px;opacity:.8}.brand b{font-size:17px}
+.wk{display:flex;align-items:center;gap:6px}
+.wk b{font-size:16px;min-width:190px;text-align:center}
+.ib{height:40px;min-width:40px;padding:0 10px;border:1px solid rgba(255,255,255,.45);background:transparent;color:#fff;border-radius:8px}
+.ib:active{background:rgba(255,255,255,.15)}
+.me{display:flex;gap:6px;align-items:center;font-size:12px;opacity:.95}
+.tabs{display:flex;gap:2px;margin-top:8px;overflow-x:auto}
+.tab{flex:1 0 auto;min-height:44px;padding:0 16px;border:none;border-radius:10px 10px 0 0;background:rgba(255,255,255,.08);color:#fff;font-weight:700}
+.tab.on{background:var(--bg);color:var(--ink)}
+.tab[data-t="prod"].on{box-shadow:inset 0 4px 0 var(--prod)}.tab[data-t="dist"].on{box-shadow:inset 0 4px 0 var(--dist)}.tab[data-t="sales"].on{box-shadow:inset 0 4px 0 var(--sales)}.tab[data-t="meet"].on{box-shadow:inset 0 4px 0 #1d2320}
+main{padding:14px 0 60px}
+.stack{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px}
+.pad{padding:12px 14px}
+h2{font-size:19px;margin:0}
+h3{font-size:15px;margin:0}
+.dim{color:var(--sub);font-size:12px}
+.chip{display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:700;border-radius:4px;padding:2px 8px;white-space:nowrap}
+.c-prod{background:var(--prod);color:#fff}.c-dist{background:var(--dist);color:#fff}.c-sales{background:var(--sales);color:#fff}.c-rout{background:var(--rout);color:#fff}
+.err{background:var(--warn-bg);color:var(--warn);border:1px solid var(--warn-line);border-radius:8px;padding:8px 12px;font-size:14px}
+.btn{min-height:44px;padding:0 16px;border-radius:10px;border:1px solid #c9cfc9;background:#fff;font-weight:700}
+.btn.pri{border:none;background:#1d2320;color:#fff}
+.btn.prod{border:none;background:var(--prod);color:#fff}.btn.dist{border:none;background:var(--dist);color:#fff}.btn.sales{border:none;background:var(--sales);color:#fff}
+.btn.sm{min-height:36px;padding:0 12px;font-size:13px}
+.btn.ghost{border:1px dashed #b9c4bf;background:#fff;font-weight:700}
+.add{width:100%;min-height:44px;border:none;border-top:1px solid var(--line2);background:#fafbf9;font-weight:700;font-size:14px}
+.pill{min-height:44px;padding:0 14px;border-radius:22px;border:1px solid #c9cfc9;background:#fff;font-size:14px}
+.pill.on{border:2px solid #1d2320;background:#eef1ee;font-weight:700}
+.grid7{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.wx{background:#fff;border:1px solid var(--line);border-radius:8px;padding:6px 2px;display:flex;flex-direction:column;align-items:center;gap:1px;font-size:12px}
+.wx b{font-size:14px}.wx .k{font-weight:700;border-radius:4px;padding:0 5px;background:#eceeec}
+.wx.rain .k{background:var(--rain-bg);color:var(--rain)}.wx.sun .k{background:#fdf0d8;color:#7a4a06}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:8px}
+.kpi{display:flex;flex-direction:column}.kpi span{font-size:12px;color:var(--sub)}.kpi b{font-size:22px;line-height:1.25}
+.bar{position:relative;height:14px;background:#e6ebf0;border-radius:7px;overflow:hidden}
+.bar i{position:absolute;left:0;top:0;bottom:0;display:block}
+/* day cards */
+.days{display:grid;gap:10px;grid-template-columns:1fr}
+@media (min-width:1000px){.days.wide{grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}.days.wide .dc{font-size:13px}.days.wide .dh{flex-direction:column;align-items:flex-start;gap:0;padding:6px 8px}.days.wide .dh b{font-size:14px}.days.wide .dh .w{text-align:left}.days.wide .dh .w br{display:none}.days.wide .db{padding:6px 8px}.days.wide .add{font-size:13px;padding:0 4px}}
+@media (min-width:700px) and (max-width:999px){.days{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dc{background:#fff;border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+.dc.today{border:2px solid #1d2320}
+.dh{display:flex;justify-content:space-between;align-items:center;gap:6px;padding:8px 12px;border-bottom:1px solid var(--line2);background:var(--soft)}
+.dh b{font-size:16px}.dh .w{font-size:12px;color:var(--sub);text-align:right}
+.dh.rain{background:var(--rain-bg)}.dh.rain .w{color:var(--rain);font-weight:700}
+.dh.sun0{background:#fbf3f3}
+.db{padding:8px 12px;display:flex;flex-direction:column;gap:8px;flex:1}
+.it{display:block;width:100%;text-align:left;border:1px solid #e1e5e0;background:#f6f7f5;border-radius:8px;padding:6px 10px;min-height:44px}
+.it .t{font-weight:700}.it .s{font-size:12px;color:var(--sub);display:block}
+.it.done{opacity:.55}.it.done .t{text-decoration:line-through}
+.it.warn{border-color:var(--warn-line);background:var(--warn-bg);color:var(--warn)}
+.it.rout{border-color:#ddd3ee;background:var(--rout-bg);color:#3d2c63;min-height:38px;padding:4px 10px}
+.it.rout.off{background:transparent;border-style:dashed;color:#6e6585;text-decoration:line-through}
+.it.ord{background:#fff;border-left:4px solid var(--dist)}
+.it.ord.l2{border-left-color:var(--ship)}.it.ord.l3{border-left-color:var(--ok)}
+.it.dead{background:#8a3a12;border-color:#8a3a12;color:#fff}
+.note{font-size:12px;border-radius:6px;padding:5px 8px}
+.note.w{background:var(--warn-bg);color:var(--warn);font-weight:700}.note.c{background:var(--caut-bg);color:var(--caut)}.note.r{background:var(--rain-bg);color:var(--rain)}.note.a{background:#fdf0d8;color:#6b3f05}
+.lane{font-size:11px;font-weight:700;border-radius:4px;padding:1px 6px;align-self:flex-start}
+.lane.l1{color:var(--dist);background:var(--dist-bg)}.lane.l2{color:var(--ship);background:var(--ship-bg)}.lane.l3{color:var(--ok);background:var(--ok-bg)}
+.sec{font-size:11px;font-weight:700;color:var(--sub);border-top:1px dashed #e2e6ea;padding-top:6px}
+.stepper{display:inline-flex;align-items:center;border:1px solid #c9d0d7;border-radius:8px;background:#fff}
+.stepper button{width:40px;height:40px;border:none;background:transparent;font-size:18px}
+.stepper b{min-width:38px;text-align:center}
+.tag2{font-size:11px;font-weight:700;border-radius:4px;padding:1px 6px}
+.ok2{background:var(--ok-bg);color:var(--ok)}.ca2{background:var(--caut-bg);color:var(--caut)}.wa2{background:var(--warn-bg);color:var(--warn)}
+/* meeting grid */
+.mg{overflow-x:auto;background:#fff;border:1px solid var(--line);border-radius:12px}
+.mgi{min-width:1120px;display:grid;grid-template-columns:150px repeat(7,minmax(0,1fr))}
+.mgh{padding:8px 10px;border:none;border-left:1px solid var(--line2);border-bottom:1px solid var(--line);display:flex;flex-direction:column;align-items:flex-start;text-align:left;background:var(--soft)}
+.mgh.rain{background:var(--rain-bg)}.mgh.sun0{background:#fbf3f3}.mgh.today{box-shadow:inset 0 -3px 0 #1d2320}
+.mgh .w{font-size:12px;color:var(--sub)}.mgh.rain .w{color:var(--rain);font-weight:700}
+.mgbar{grid-column:1/-1;display:flex;justify-content:space-between;align-items:center;padding:6px 12px;color:#fff;font-weight:700;font-size:14px}
+.mgbar button{border:1px solid rgba(255,255,255,.6);background:transparent;color:#fff;border-radius:6px;min-height:32px;padding:0 10px;font-size:12px}
+.mgl{padding:8px 10px;border:none;border-bottom:1px solid var(--line2);border-left:4px solid #999;display:flex;flex-direction:column;align-items:flex-start;text-align:left;background:#fafbf9}
+.mgc{padding:5px;border-left:1px solid var(--line2);border-bottom:1px solid var(--line2);display:flex;flex-direction:column;gap:4px;min-height:48px}
+.mgc.w{background:#fff7f3}
+.mgc .it{font-size:12.5px;min-height:32px;padding:4px 6px;line-height:1.35}
+.alerts{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:8px}
+.al{display:flex;gap:10px;align-items:flex-start;text-align:left;padding:10px 12px;border-radius:8px;border:1px solid #f0d6cb;background:#fbf6f4;min-height:56px}
+.al .x{flex:1;display:flex;flex-direction:column}.al .x span{font-size:13px;color:#3a413d}
+.al.info{border-color:#e3ddd6;background:#faf8f6}
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.step{min-height:52px;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:4px 14px;border-radius:10px;border:1px solid #c9cfc9;background:#fff;text-align:left}
+.step.on{border:2px solid #1d2320;background:#1d2320;color:#fff}
+.step small{font-size:11px}
+.rvs{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:12px}
+.rv{display:flex;flex-direction:column;overflow:hidden}
+.rvh{color:#fff;font-weight:700;font-size:16px;padding:8px 14px}
+.req{display:grid;grid-template-columns:120px 1fr 64px 76px;gap:10px;align-items:center;text-align:left;min-height:48px;padding:6px 12px;border:1px solid #e4e7e3;border-radius:8px;background:#fff;width:100%}
+@media (max-width:640px){.req{grid-template-columns:1fr auto}.req .rt{grid-column:1/-1;font-size:12px}.req .rd{display:none}}
+.st{justify-self:start;font-size:12px;font-weight:700;border-radius:6px;padding:3px 10px}
+/* drawer */
+.dw{position:fixed;inset:0;z-index:50;display:flex;justify-content:flex-end}
+.dw .bg{position:absolute;inset:0;border:none;background:rgba(20,24,22,.38)}
+.dw aside{position:relative;width:480px;max-width:100%;height:100%;overflow-y:auto;background:#fff;box-shadow:-8px 0 24px rgba(0,0,0,.15);display:flex;flex-direction:column;padding-bottom:env(safe-area-inset-bottom)}
+.dwh{display:flex;gap:12px;align-items:flex-start;padding:14px 16px;color:#fff;background:#1d2320;position:sticky;top:0;z-index:1}
+.dwh .x{flex:1;display:flex;flex-direction:column}.dwh small{font-size:12px;opacity:.9}.dwh b{font-size:19px;line-height:1.3}
+.dwb{padding:14px 16px;display:flex;flex-direction:column;gap:14px}
+dl.kv{margin:0;display:grid;grid-template-columns:96px 1fr;gap:6px 12px;font-size:14px}
+dl.kv dt{color:var(--sub)}dl.kv dd{margin:0;font-weight:700;white-space:pre-line;word-break:break-word}
+.li{display:flex;gap:8px;padding:8px 10px;background:#f6f7f5;border-radius:8px;font-size:14px;align-items:flex-start;text-align:left;border:none;width:100%}
+.acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.f{display:flex;flex-direction:column;gap:6px}
+.f>label,.f>.lb{font-size:13px;font-weight:700}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.inp{min-height:44px;border:1px solid #c9cfc9;border-radius:8px;padding:0 10px;font-size:16px;background:#fff;width:100%}
+textarea.inp{padding:8px 10px;min-height:90px;resize:vertical}
+/* misc */
+.login{position:fixed;inset:0;z-index:100;background:var(--bg);display:flex;align-items:center;justify-content:center;padding:16px}
+.login .card{width:100%;max-width:380px;padding:20px;display:flex;flex-direction:column;gap:12px}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(20px);opacity:0;transition:.2s;background:#1d2320;color:#fff;padding:10px 16px;border-radius:10px;z-index:120;font-size:14px;pointer-events:none;max-width:90vw}
+.toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+.busy{position:fixed;top:0;left:0;right:0;height:3px;z-index:130;background:linear-gradient(90deg,#2c6a3b,#1f5f99,#a3541c);background-size:200% 100%;animation:mv 1s linear infinite;opacity:0;transition:.2s}
+.busy.on{opacity:1}@keyframes mv{to{background-position:-200% 0}}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.cal button{min-height:58px;border:1px solid var(--line);border-radius:8px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-size:13px}
+.cal button.inwk{border-color:var(--prod);background:#f1f7f2}
+.cal button b{font-size:11px;color:var(--prod)}
+.cal .hd{text-align:center;font-size:12px;color:var(--sub)}
+</style>
+</head>
+<body>
+<div class="busy" id="busy"></div>
+
+<div class="login" id="login" hidden>
+  <div class="card">
+    <h2>週間スケジュール</h2>
+    <span class="dim">オオサカポテト 社内用</span>
+    <div class="f"><label for="lgUser">名前</label><select id="lgUser" class="inp"></select></div>
+    <div class="f"><label for="lgKey">合言葉</label><input id="lgKey" class="inp" type="password" autocomplete="current-password"></div>
+    <button class="btn pri" id="lgOk">入る</button>
+    <div id="lgErr" class="dim" role="alert"></div>
+  </div>
+</div>
+
+<header class="top">
+  <div class="wrap">
+    <div class="row">
+      <div class="brand"><small>オオサカポテト</small><b>週間スケジュール</b></div>
+      <div class="wk">
+        <button class="ib" id="wkPrev" aria-label="前の週">‹</button>
+        <b id="wkLabel">—</b>
+        <button class="ib" id="wkNext" aria-label="次の週">›</button>
+        <button class="ib" id="wkNow">今週</button>
+      </div>
+      <div class="me"><span id="meName"></span><span id="lastLoad"></span><button class="ib" id="reloadBtn" aria-label="読み直す">↻</button><button class="ib" id="logoutBtn">出る</button></div>
+    </div>
+    <nav class="tabs" id="tabs">
+      <button class="tab" data-t="meet">ミーティング</button>
+      <button class="tab" data-t="prod">生産部</button>
+      <button class="tab" data-t="dist">流通部</button>
+      <button class="tab" data-t="sales">営業</button>
+    </nav>
+  </div>
+</header>
+
+<main><div class="wrap" id="view"></div></main>
+<div id="drawer"></div>
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+'use strict';
+const API_URL='https://script.google.com/macros/s/AKfycbzN5sFXFAm3vOIlxur4VAvZDbgd6E26AGXtHee3bzXVeaKNxThvSdf1Qg_IIG2BBecDyg/exec';
+const JUHATCHU_URL='https://nariosakapotato.github.io/juhatchu/';
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const pad=n=>String(n).padStart(2,'0');
+const ymd=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`;
+const pdt=s=>{const d=new Date(String(s).slice(0,10)+'T00:00:00');return isNaN(d)?null:d};
+const addD=(d,n)=>{const x=new Date(d);x.setDate(x.getDate()+n);return x};
+const monday=d=>{const x=new Date(d.getFullYear(),d.getMonth(),d.getDate());const w=(x.getDay()+6)%7;return addD(x,-w)};
+const W='日月火水木金土';
+const md=d=>`${d.getMonth()+1}/${d.getDate()}`;
+const mdw=d=>`${md(d)}（${W[d.getDay()]}）`;
+const fmt=n=>Math.round(n).toLocaleString('ja-JP');
+const DEPT={prod:'生産',dist:'流通',sales:'営業'};
+const DEPT_KEY={'生産':'prod','流通':'dist','営業':'sales'};
+const DCOL={'生産':'var(--prod)','流通':'var(--dist)','営業':'var(--sales)'};
+const TEAMCOL=['#2c6a3b','#1d5f73','#7a4f12','#5b6b1f','#6a2c5c','#2c4f6a'];
+
+let ME='',KEY='',TODAY=new Date(),WEEK=monday(TODAY),TAB='meet',D=null,STEP='all',PROD_TEAM='全体',PROD_MODE='week',MONTH=null;
+let REG=[],DREG=[];
+const reg=f=>{REG.push(f);return REG.length-1};
+const dreg=f=>{DREG.push(f);return DREG.length-1};
+
+/* ===== API ===== */
+function busy(on){$('busy').classList.toggle('on',!!on)}
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('on');clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('on'),2400)}
+async function api(action,payload){
+  if(API_URL.indexOf('__')===0)throw new Error('API_URL が未設定です');
+  const ctl=new AbortController();const tm=setTimeout(()=>ctl.abort(),45000);
+  try{
+    const r=await fetch(API_URL,{method:'POST',headers:{'Content-Type':'text/plain'},body:JSON.stringify({user:ME,key:KEY,action,payload}),signal:ctl.signal});
+    const j=await r.json();
+    if(!j.ok){if(j.authFailed)showLogin(j.error);throw new Error(j.error||'error')}
+    return j.result;
+  }catch(e){
+    if(e.name==='AbortError')throw new Error('応答がありません（電波が弱いか、混んでいます）');
+    if(e instanceof TypeError)throw new Error('通信できませんでした（電波を確認して、もう一度）');
+    throw e;
+  }finally{clearTimeout(tm)}
+}
+async function save(action,payload,okMsg){busy(true);try{const r=await api(action,payload);if(okMsg)toast(okMsg);return r}catch(e){toast('保存できませんでした：'+e.message);throw e}finally{busy(false)}}
+function range(){
+  if(TAB==='prod'&&PROD_MODE==='month'&&MONTH){const a=new Date(MONTH.getFullYear(),MONTH.getMonth(),1);const b=new Date(MONTH.getFullYear(),MONTH.getMonth()+1,0);return {from:ymd(monday(a)),to:ymd(addD(monday(b),6))}}
+  return {from:ymd(addD(WEEK,-7)),to:ymd(addD(WEEK,6))};
+}
+let LOADKEY='';
+async function load(force){
+  const r=range();const k=r.from+'|'+r.to;
+  if(!force&&D&&LOADKEY===k){render();return}
+  busy(true);
+  try{D=await api('load',r);LOADKEY=k;TODAY=new Date();$('lastLoad').textContent=`${pad(TODAY.getHours())}:${pad(TODAY.getMinutes())} 更新`;render()}
+  catch(e){$('view').innerHTML=`<div class="err">読み込みに失敗しました：${esc(e.message)}</div>`}
+  finally{busy(false)}
+}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&KEY&&D&&Date.now()-(load._t||0)>60000){load._t=Date.now();load(true)}});
+
+/* ===== ログイン ===== */
+function showLogin(msg){$('login').hidden=false;$('lgErr').textContent=msg||'';
+  fetch(API_URL).then(r=>r.json()).then(j=>{const s=$('lgUser');s.innerHTML=(j.users||[]).map(u=>`<option>${esc(u)}</option>`).join('');const sv=localStorage.getItem('sched_user');if(sv)s.value=sv}).catch(()=>{$('lgErr').textContent='APIに接続できません（電波・URLを確認）'})}
+$('lgOk').onclick=async()=>{ME=$('lgUser').value;KEY=$('lgKey').value;$('lgErr').textContent='確認中…';
+  try{await api('ping',{});try{localStorage.setItem('sched_user',ME);localStorage.setItem('sched_key',KEY)}catch(e){}$('login').hidden=true;$('meName').textContent=ME;load(true)}catch(e){$('lgErr').textContent=e.message}};
+$('lgKey').onkeydown=e=>{if(e.key==='Enter')$('lgOk').click()};
+$('logoutBtn').onclick=()=>{try{localStorage.removeItem('sched_key')}catch(e){}KEY='';showLogin('ログアウトしました')};
+$('reloadBtn').onclick=()=>load(true);
+
+/* ===== ナビ ===== */
+function setWeek(d){WEEK=monday(d);$('wkLabel').textContent=`${mdw(WEEK)} 〜 ${mdw(addD(WEEK,6))}`;}
+$('wkPrev').onclick=()=>{if(TAB==='prod'&&PROD_MODE==='month'){MONTH=new Date(MONTH.getFullYear(),MONTH.getMonth()-1,1)}else setWeek(addD(WEEK,-7));load()};
+$('wkNext').onclick=()=>{if(TAB==='prod'&&PROD_MODE==='month'){MONTH=new Date(MONTH.getFullYear(),MONTH.getMonth()+1,1)}else setWeek(addD(WEEK,7));load()};
+$('wkNow').onclick=()=>{setWeek(new Date());MONTH=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);load()};
+$('tabs').onclick=e=>{const b=e.target.closest('.tab');if(!b)return;TAB=b.dataset.t;try{localStorage.setItem('sched_tab',TAB)}catch(x){}closeDw();load()};
+document.addEventListener('click',e=>{
+  const d=e.target.closest('[data-d]');if(d&&DREG[+d.dataset.d]){DREG[+d.dataset.d](e);return}
+  const k=e.target.closest('[data-k]');if(k&&REG[+k.dataset.k])REG[+k.dataset.k](e);
+});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&$('drawer').innerHTML)closeDw()});
+
+/* ===== データの見方 ===== */
+const weekDays=()=>[0,1,2,3,4,5,6].map(i=>addD(WEEK,i));
+const isToday=d=>ymd(d)===ymd(TODAY);
+const M=k=>((D&&D.masters[k])||[]).map(x=>x.v);
+const MM=k=>((D&&D.masters[k])||[]);
+const S=(k,def)=>D&&D.settings[k]!==undefined&&D.settings[k]!==''?D.settings[k]:def;
+function wxOf(d){return (D.weather||[]).find(w=>w.date===ymd(d))||null}
+function wxClass(w){if(!w)return '';if(Number(w.pop)>=50||/雨/.test(w.text.charAt(0)))return 'rain';if(w.text.charAt(0)==='晴')return 'sun';return ''}
+const plansOn=(dept,d)=>D.plans.filter(p=>p.dept===dept&&p.date===ymd(d));
+function offPeople(d){const out=[];String(S('定休','')).split('|').forEach(x=>{const [n,ds]=x.split(':');if(n&&ds&&ds.split(',').map(Number).includes(d.getDay()))out.push(n.trim())});return out}
+function kokoroCap(d){const k=ymd(d);if(D.kokoro&&D.kokoro[k]!==undefined)return D.kokoro[k];const days=String(S('こころ来所曜日','1,2,3,4,5')).split(',').map(Number);return days.includes(d.getDay())?Number(S('こころ人数',5)):0}
+function kokoroUsed(d){return plansOn('流通',d).filter(p=>p.state!=='削除'&&/こころ/.test(p.who)).reduce((s,p)=>s+(p.kk||0),0)}
+function routinesOn(d){const k=ymd(d);return (D.routines||[]).filter(r=>r.dow===d.getDay()).sort((a,b)=>a.order-b.order).map(r=>({...r,off:(D.routineOff||[]).some(o=>o.date===k&&o.who===r.who&&o.text===r.text)}))}
+function routineWhos(){const s=[];(D.routines||[]).forEach(r=>{if(!s.includes(r.who))s.push(r.who)});return s}
+function deadlinesOn(d){const out=[];String(S('受注締切','')).split('|').forEach(x=>{const p=x.split(':');if(p.length>=4&&Number(p[0])===d.getDay())out.push({time:p[1]+':'+p[2],arrive:W[Number(p[3])]})});return out}
+function teams(){const t=M('生産チーム');D.plans.filter(p=>p.dept==='生産'&&p.team&&!t.includes(p.team)).forEach(p=>t.push(p.team));return t}
+const teamCol=t=>TEAMCOL[Math.max(0,teams().indexOf(t))%TEAMCOL.length];
+
+/* 受発注 */
+const JH=()=>D.jh;
+const lineKg=l=>l.item!=='さつまいも'?0:l.unit==='kg'?l.qty:l.unit==='袋'?l.qty*(/350/.test(l.size)?0.35:0.55):0;
+const ordKg=o=>o.lines.reduce((s,l)=>s+lineKg(l),0);
+const ordBags=o=>o.lines.filter(l=>l.unit==='袋'&&l.item==='さつまいも').reduce((s,l)=>s+l.qty,0);
+const ordShort=o=>o.lines.map(l=>{const bag=l.unit==='袋';const u=/野菜コンテナ/.test(l.pack)?'カゴ':/コンテナ/.test(l.pack)?'個':'箱';return (bag?'袋詰':'バラ'+(l.size?String(l.size).replace(/（.*/,''):''))+(l.boxes?` ${l.boxes}${u}`:` ${fmt(l.qty)}${l.unit}`)}).join('・');
+const ordLong=o=>o.lines.map(l=>`${l.item} ${l.size||''} ${l.pack||''}　${fmt(l.qty)}${l.unit}${l.boxes?`（${l.boxes}${/コンテナ/.test(l.pack)?'個':'箱'}）`:''}`).join('\n');
+const active=o=>!['納品済','キャンセル'].includes(o.status);
+function ordersOn(key,d){if(!JH())return [];const k=ymd(d);return JH().orders.filter(o=>o[key]===k)}
+function readyKgOn(d){return ordersOn('ready',d).reduce((s,o)=>s+ordKg(o),0)}
+function bagNeedOn(d){return ordersOn('ready',d).reduce((s,o)=>s+ordBags(o),0)}
+function shiftOf(d,st){const k=ymd(d)+'|'+st.n;const sh=JH().shifts;if(k in sh)return sh[k];return st.dow.includes(d.getDay())?[st.f,st.t,st.brk]:null}
+const hrs=v=>v?(v[1]-v[0])-(v[2]||0)/60:0;
+function staffOn(d){if(!JH())return {h:0,n:0,names:[],absent:[]};let h=0,n=0;const names=[],absent=[];JH().staff.forEach(st=>{const v=shiftOf(d,st);const k=ymd(d)+'|'+st.n;if(!v){if(k in JH().shifts&&st.dow.includes(d.getDay()))absent.push(st.n);return}const c=v[3]??st.cnt;h+=hrs(v)*c;n+=c;names.push(st.role==='グループ'?`${st.n}${c}名`:st.n)});return {h:Math.round(h*10)/10,n,names,absent}}
+function weekKg(mon){if(!JH())return {done:0,plan:0};const a=ymd(mon),b=ymd(addD(mon,6));let done=0,plan=0;JH().orders.forEach(o=>{if(o.deliver<a||o.deliver>b||o.status==='キャンセル')return;const kg=ordKg(o);if(o.shipDone)done+=kg;else if(active(o))plan+=kg});return {done,plan}}
+function pendingOrders(){if(!JH())return [];return JH().orders.filter(o=>o.status==='受注').sort((a,b)=>a.deliver<b.deliver?-1:1)}
+
+/* ===== 画面 ===== */
+function render(){
+  REG=[];
+  document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===TAB));
+  if(TAB==='prod'&&PROD_MODE==='month'&&MONTH)$('wkLabel').textContent=`${MONTH.getFullYear()}年${MONTH.getMonth()+1}月`;else setWeek(WEEK);
+  if(!D){$('view').innerHTML='';return}
+  const warn=[D.jhError,D.weatherError].filter(Boolean).map(m=>`<div class="err">${esc(m)}</div>`).join('');
+  $('view').innerHTML=warn+({meet:viewMeet,prod:viewProd,dist:viewDist,sales:viewSales})[TAB]();
+  if($('drawer').innerHTML&&DW.refresh)DW.refresh();
+}
+function wxStrip(){return `<div class="grid7">${weekDays().map(d=>{const w=wxOf(d);return `<div class="wx ${wxClass(w)}"><b style="font-size:12px">${W[d.getDay()]}</b>${w?`<span class="k">${esc(w.text.charAt(0))}</span><b>${w.pop===''?'—':w.pop+'%'}</b><span class="dim" style="font-size:10px">${w.rel?'信頼度'+esc(w.rel):'&nbsp;'}</span>`:'<span class="dim">—</span>'}</div>`}).join('')}</div>`}
+function dayHead(d){const w=wxOf(d);const hol=JH()&&JH().holidays[ymd(d)];return `<div class="dh ${wxClass(w)==='rain'?'rain':d.getDay()===0?'sun0':''}"><b>${isToday(d)?'今日 ':''}${mdw(d)}${hol?` <span class="dim">${esc(hol)}</span>`:''}</b><span class="w">${w?`${esc(w.text)}<br>降水${w.pop===''?'—':w.pop+'%'}`:''}</span></div>`}
+function deptReqs(dept){
+  const list=(D.reqs||[]).filter(r=>r.state!=='削除'&&(r.from===dept||r.to===dept));
+  return `<section class="card pad stack" style="gap:8px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><h3>他部署との依頼・共有</h3><button class="btn sm" data-k="${reg(()=>openReqForm(null,dept))}">＋ 依頼を書く</button></div>
+    ${list.length?list.map(reqRow).join(''):'<span class="dim">今はありません</span>'}</section>`;
+}
+function reqRow(r){const st=r.state==='対応済'?'ok2':'wa2';return `<button class="req" data-k="${reg(()=>openReq(r))}"><b class="rt">${esc(r.from)} → ${esc(r.to)}</b><span>${esc(r.text)}${r.owner?`<span class="dim">　担当：${esc(r.owner)}</span>`:''}</span><span class="dim rd">${r.due?md(pdt(r.due)):''}</span><span class="st ${st}">${esc(r.state)}</span></button>`}
+
+/* --- ミーティング --- */
+function viewMeet(){
+  const steps=[['all','全体','全部を表示'],['review','ステップ①','先週の振り返り'],['week','ステップ②','今週の予定'],['reqs','ステップ③','部署間の依頼']];
+  const show=s=>STEP==='all'||STEP===s;
+  let h=`<div class="stack"><nav class="steps">${steps.map(([id,no,nm])=>`<button class="step ${STEP===id?'on':''}" aria-pressed="${STEP===id}" data-k="${reg(()=>{STEP=id;render()})}"><small>${no}</small><b>${nm}</b></button>`).join('')}</nav>`;
+  if(show('week'))h+=alertsBox();
+  if(show('review'))h+=reviewBox();
+  if(show('week'))h+=meetGrid();
+  if(show('reqs'))h+=meetReqs();
+  return h+'</div>';
+}
+function alerts(){
+  const out=[];const days=weekDays();
+  days.forEach(d=>{const w=wxOf(d);const pp=plansOn('生産',d).filter(p=>p.state==='予定');
+    if(w&&Number(w.pop)>=50&&pp.length)out.push({dept:'生産',title:`${mdw(d)} 降水${w.pop}%`,body:`生産の予定 ${pp.length}件。雨天時の作業を確認`,d,kind:'rain'});
+    if(w&&(w.rel==='B'||w.rel==='C')&&pp.length)out.push({dept:'生産',title:`${mdw(d)} 予報の信頼度${w.rel}`,body:`生産の予定 ${pp.length}件 → 前日に再確認`,d,kind:'rel'});
+  });
+  if(JH()){days.forEach(d=>{const kg=readyKgOn(d);if(kg>JH().capKg)out.push({dept:'流通',title:`${mdw(d)} 用意 ${fmt(kg)}kg`,body:`上限${fmt(JH().capKg)}kgを超え`,d,kind:'cap'});
+      const need=bagNeedOn(d),cap=Math.floor(staffOn(d).h*JH().bagsPerH);if(need>cap)out.push({dept:'流通',title:`${mdw(d)} 袋詰 ${fmt(need-cap)}袋 不足`,body:`必要${fmt(need)}袋／能力${fmt(cap)}袋`,d,kind:'bag'})});
+    const pend=pendingOrders();if(pend.length)out.push({dept:'流通',title:`日程未定 ${pend.length}件`,body:'受発注アプリで用意日を決める',kind:'pend'});}
+  days.forEach(d=>{const u=kokoroUsed(d),c=kokoroCap(d);if(u>c)out.push({dept:'流通',title:`${mdw(d)} こころさん 配置${u}／来所${c}名`,body:'人数が足りません',d,kind:'kk'})});
+  const today=ymd(TODAY);(D.reqs||[]).filter(r=>r.state==='未対応'&&r.due&&r.due<today).forEach(r=>out.push({dept:r.to,title:'期限切れの依頼',body:r.text,req:r,kind:'req'}));
+  days.forEach(d=>deadlinesOn(d).forEach(x=>out.push({dept:'営業',title:`${mdw(d)} ${x.time} 受注締切`,body:`${x.arrive}曜着の分`,d,kind:'dead',info:true})));
+  return out;
+}
+function alertsBox(){
+  const a=alerts();if(!a.length)return '';
+  return `<section class="card pad stack" style="gap:8px;border:2px solid #b8442a"><h3 style="font-size:17px">今週の注意点（押すと詳しく）</h3><div class="alerts">${a.map(x=>`<button class="al ${x.info?'info':''}" data-k="${reg(()=>openAlert(x))}"><span class="chip c-${DEPT_KEY[x.dept]}">${esc(x.dept)}</span><span class="x"><b>${esc(x.title)}</b><span>${esc(x.body)}</span></span><span aria-hidden="true" class="dim">›</span></button>`).join('')}</div></section>`;
+}
+function openAlert(a){
+  if(a.req)return openReq(a.req);
+  if(a.kind==='pend')return openPending();
+  if(a.d)return openDay(a.d,a.dept);
+}
+function reviewBox(){
+  const pw=ymd(addD(WEEK,-7));
+  const auto={'流通':()=>{const k=weekKg(addD(WEEK,-7));return [`出荷 ${(k.done/1000).toFixed(2)}t`,`目標${(JH()?JH().targetKg/1000:5).toFixed(1)}tの${JH()?Math.round(k.done/JH().targetKg*100):0}%`]},
+    '生産':()=>{const pp=D.plans.filter(p=>p.dept==='生産'&&p.date>=pw&&p.date<=ymd(addD(WEEK,-1)));return [`予定 ${pp.length}件`,`完了 ${pp.filter(p=>p.state==='完了').length}件`]},
+    '営業':()=>{const pp=D.plans.filter(p=>p.dept==='営業'&&p.date>=pw&&p.date<=ymd(addD(WEEK,-1)));return [`予定 ${pp.length}件`,'']}};
+  return `<section class="stack" style="gap:10px"><h2>① 先週の振り返り（${mdw(addD(WEEK,-7))}〜${mdw(addD(WEEK,-1))}）</h2><div class="rvs">${['生産','流通','営業'].map(dept=>{
+    const r=(D.reviews||[]).find(x=>x.week===pw&&x.dept===dept)||{};const a=auto[dept]();
+    return `<article class="card rv"><div class="rvh" style="background:${DCOL[dept]}">${dept}${dept==='生産'||dept==='流通'?'部':''}</div><div class="pad stack" style="gap:8px;flex:1">
+      <div class="kpis"><div class="kpi"><span>自動集計</span><b>${esc(a[0])}</b><span>${esc(a[1])}</span></div>${r.k1||r.k2?`<div class="kpi"><span>手入力</span><b>${esc(r.k1||'')}</b><span>${esc(r.k2||'')}</span></div>`:''}</div>
+      <div style="border-top:1px dashed #e4e7e3;padding-top:8px;display:flex;flex-direction:column;gap:4px;font-size:14px">${r.good?`<span>○ ${esc(r.good).replace(/\n/g,'<br>○ ')}</span>`:''}${r.bad?`<span>× ${esc(r.bad).replace(/\n/g,'<br>× ')}</span>`:''}${!r.good&&!r.bad?'<span class="dim">まだ書かれていません</span>':''}</div>
+      <button class="btn" style="margin-top:auto" data-k="${reg(()=>openReview(dept,pw,r))}">${r.good||r.bad?'中身を見る・直す ›':'振り返りを書く ›'}</button></div></article>`}).join('')}</div></section>`;
+}
+function meetGrid(){
+  const days=weekDays();
+  let h=`<section class="stack" style="gap:10px"><div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:baseline;gap:8px"><h2>② 今週の予定（全部署を1枚で）</h2><span class="dim">日付・行の名前・各予定を押すと中身が開きます。色付き＝注意</span></div><div class="mg"><div class="mgi"><div class="mgh" style="border-left:none"></div>`;
+  h+=days.map(d=>{const w=wxOf(d);return `<button class="mgh ${wxClass(w)==='rain'?'rain':d.getDay()===0?'sun0':''} ${isToday(d)?'today':''}" data-k="${reg(()=>openDay(d))}"><b>${mdw(d)} ›</b><span class="w">${w?`${esc(w.text)} ${w.pop===''?'':w.pop+'%'}`:'&nbsp;'}</span></button>`}).join('');
+  const row=(label,sub,col,open,cells)=>`<button class="mgl" style="border-left-color:${col}" data-k="${reg(open)}"><b>${esc(label)} ›</b><span class="dim">${esc(sub)}</span></button>`+cells.map(c=>`<div class="mgc ${c.w?'w':''}">${c.h}</div>`).join('');
+  const bar=(dept,label,tab)=>`<div class="mgbar" style="background:${DCOL[dept]}"><span>${label}</span><button data-k="${reg(()=>{TAB=tab;load()})}">ページを開く ›</button></div>`;
+  // 生産
+  h+=bar('生産','生産部','prod');
+  teams().forEach(t=>{const n=D.plans.filter(p=>p.dept==='生産'&&p.team===t&&p.date>=ymd(WEEK)&&p.date<=ymd(addD(WEEK,6))).length;
+    h+=row(t,`${n}件`,teamCol(t),()=>openTeam(t),days.map(d=>{const pp=plansOn('生産',d).filter(p=>p.team===t);const w=wxOf(d);const rain=w&&Number(w.pop)>=50&&pp.length;return {w:rain,h:pp.map(p=>planItem(p,true)).join('')}}))});
+  const other=D.plans.filter(p=>p.dept==='生産'&&!p.team);if(other.length)h+=row('チーム未設定','',' #999',()=>{},days.map(d=>({h:plansOn('生産',d).filter(p=>!p.team).map(p=>planItem(p,true)).join('')})));
+  // 流通
+  h+=bar('流通','流通部','dist');
+  routineWhos().forEach(who=>{h+=row(who,'定例ルーティン','var(--rout)',()=>openRoutineOf(who),days.map(d=>{const rs=routinesOn(d).filter(r=>r.who===who);const off=offPeople(d).includes(who);return {h:rs.length?rs.map(r=>routItem(d,r)).join(''):(off?'<span class="dim">休み</span>':'')}}))});
+  h+=row('チーム',M('流通メンバー').filter(x=>!routineWhos().includes(x)).join('・'),'var(--dist)',()=>openDistTeam(),days.map(d=>{const pp=plansOn('流通',d);const u=kokoroUsed(d),c=kokoroCap(d);const off=offPeople(d).filter(n=>!routineWhos().includes(n));return {w:u>c,h:pp.map(p=>planItem(p,true)).join('')+(off.length?`<span class="dim">休み：${esc(off.join('・'))}</span>`:'')}}));
+  h+=row('出荷','受発注アプリから','var(--dist)',()=>openPending(true),days.map(d=>{if(!JH())return {h:''};const kg=readyKgOn(d),need=bagNeedOn(d),cap=Math.floor(staffOn(d).h*JH().bagsPerH);const over=kg>JH().capKg,short=need>cap;const dl=ordersOn('deliver',d);let s='';
+    if(kg)s+=`<button class="it ${over?'warn':''}" data-k="${reg(()=>openDay(d,'流通'))}">用意 ${fmt(kg)}kg${over?'（上限超え）':''}</button>`;
+    if(need)s+=`<button class="it ${short?'warn':''}" data-k="${reg(()=>openDay(d,'流通'))}">袋詰 ${fmt(need)}／能力${fmt(cap)}袋</button>`;
+    if(dl.length)s+=`<button class="it" data-k="${reg(()=>openOrders(d,'deliver'))}">納品 ${dl.length}件・${(dl.reduce((a,o)=>a+ordKg(o),0)/1000).toFixed(2)}t</button>`;
+    return {w:over||short,h:s}}));
+  // 営業
+  h+=bar('営業','営業','sales');
+  h+=row('営業','自由記入','var(--sales)',()=>{TAB='sales';load()},days.map(d=>({h:deadlinesOn(d).map(x=>`<button class="it dead" data-k="${reg(()=>openDay(d,'営業'))}">受注締切 ${x.time}（${x.arrive}曜着）</button>`).join('')+plansOn('営業',d).map(p=>planItem(p,true)).join('')})));
+  return h+'</div></div></section>';
+}
+function meetReqs(){
+  const list=(D.reqs||[]).filter(r=>r.state!=='削除');const open=list.filter(r=>r.state==='未対応').length;
+  return `<section class="card pad stack" style="gap:8px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap"><h2>③ 部署間の依頼（未対応 ${open}件）</h2><button class="btn sm" data-k="${reg(()=>openReqForm(null,'生産'))}">＋ 依頼を書く</button></div><span class="dim">行を押すと中身が開きます。担当と期限は会議で決めて入れてください</span>${list.length?list.sort((a,b)=>(a.state>b.state?-1:1)).map(reqRow).join(''):'<span class="dim">依頼はありません</span>'}</section>`;
+}
+
+/* 予定のボタン */
+function planText(p){
+  if(p.dept==='生産')return {t:`${p.field?p.field+'：':''}${p.work}`,s:[p.qty?`${p.qty}${p.unit||''}`:'',p.spot?`スポット${p.spot}名`:'',p.rain?`雨天：${p.rain}`:''].filter(Boolean).join('・')};
+  if(p.dept==='流通')return {t:`${whoText(p)}：${p.work}`,s:p.memo||''};
+  return {t:p.work,s:''};
+}
+function whoText(p){return String(p.who||'').split('|').filter(Boolean).map(n=>n==='こころ'?`こころ${p.kk||''}`:n).join('・')}
+function planItem(p,compact){const x=planText(p);const w=wxOf(pdt(p.date));const risky=p.dept==='生産'&&p.state==='予定'&&w&&(Number(w.pop)>=50||w.rel==='B'||w.rel==='C');
+  return `<button class="it ${p.state==='完了'?'done':''} ${risky?'warn':''}" data-k="${reg(()=>openPlan(p))}">${p.dept==='生産'&&!compact?`<span class="chip" style="background:${teamCol(p.team)};color:#fff;margin-right:6px">${esc(p.team||'—')}</span>`:''}<span class="t">${esc(x.t)}</span>${x.s?`<span class="s">${esc(x.s)}</span>`:''}</button>`}
+function routItem(d,r){return `<button class="it rout ${r.off?'off':''}" data-k="${reg(()=>openRoutine(d,r))}">${esc(r.text)}${r.off?'（今週なし）':''}</button>`}
+
+/* --- 生産部 --- */
+function viewProd(){
+  const ts=['全体',...teams()];
+  let h=`<div class="stack"><div class="card pad" style="display:flex;flex-wrap:wrap;gap:8px;align-items:center;justify-content:space-between">
+    <div class="chips">${ts.map(t=>`<button class="pill ${PROD_TEAM===t?'on':''}" aria-pressed="${PROD_TEAM===t}" data-k="${reg(()=>{PROD_TEAM=t;render()})}">${esc(t)}</button>`).join('')}</div>
+    <div class="chips"><button class="pill ${PROD_MODE==='week'?'on':''}" data-k="${reg(()=>{PROD_MODE='week';load()})}">週</button><button class="pill ${PROD_MODE==='month'?'on':''}" data-k="${reg(()=>{PROD_MODE='month';MONTH=MONTH||new Date(WEEK.getFullYear(),WEEK.getMonth(),1);load()})}">月</button></div></div>`;
+  const inT=p=>PROD_TEAM==='全体'||p.team===PROD_TEAM;
+  if(PROD_MODE==='month'){
+    const a=new Date(MONTH.getFullYear(),MONTH.getMonth(),1),last=new Date(MONTH.getFullYear(),MONTH.getMonth()+1,0);let c=monday(a);
+    h+=`<section class="card pad stack" style="gap:8px"><h3>${MONTH.getFullYear()}年${MONTH.getMonth()+1}月　${esc(PROD_TEAM)}</h3><div class="cal">${'月火水木金土日'.split('').map(x=>`<span class="hd">${x}</span>`).join('')}`;
+    while(c<=addD(monday(last),6)){const d=new Date(c);const n=plansOn('生産',d).filter(inT).length;const inM=d.getMonth()===MONTH.getMonth();
+      h+=`<button class="${ymd(monday(d))===ymd(WEEK)?'inwk':''}" style="${inM?'':'opacity:.4'}" data-k="${reg(()=>{setWeek(d);PROD_MODE='week';load()})}" aria-label="${md(d)}">${d.getDate()}<b>${n?n+'件':''}</b></button>`;c=addD(c,1)}
+    return h+'</div><span class="dim">数字＝その日の作業件数。日を押すとその週を表示します。</span></section></div>';
+  }
+  const days=weekDays();const wk=D.plans.filter(p=>p.dept==='生産'&&p.date>=ymd(WEEK)&&p.date<=ymd(addD(WEEK,6))&&inT(p));
+  const rainDays=days.filter(d=>{const w=wxOf(d);return w&&Number(w.pop)>=50}).length;
+  h+=`<section class="stack" style="gap:6px"><div style="display:flex;justify-content:space-between"><h3>週間天気（大阪府）</h3><span class="dim">気象庁${D.weather&&D.weather[0]?' '+esc(String(D.weather[0].reported).slice(5,16).replace('T',' '))+'発表':''}</span></div>${wxStrip()}</section>
+    <section class="card pad kpis"><div class="kpi"><span>作業予定</span><b>${wk.length}件</b><span>完了 ${wk.filter(p=>p.state==='完了').length}件</span></div><div class="kpi"><span>スポット応援</span><b>延べ${wk.reduce((s,p)=>s+(p.spot||0),0)}名</b></div><div class="kpi"><span>雨リスク日</span><b style="color:var(--rain)">${rainDays}日</b></div></section>
+    <div class="days">${days.map(d=>{const pp=plansOn('生産',d).filter(inT);const w=wxOf(d);
+      const notes=[];if(w&&Number(w.pop)>=50&&pp.length)notes.push(`<div class="note r">降水${w.pop}%：雨天時の作業を確認</div>`);if(w&&(w.rel==='B'||w.rel==='C')&&pp.length)notes.push(`<div class="note c">信頼度${w.rel}：前日に再確認してから確定</div>`);
+      return `<article class="dc ${isToday(d)?'today':''}">${dayHead(d)}<div class="db">${notes.join('')}${pp.length?pp.map(p=>planItem(p,false)).join(''):'<span class="dim">予定なし</span>'}</div><button class="add" style="color:var(--prod)" data-k="${reg(()=>openPlanForm('生産',d))}">＋ 予定を追加</button></article>`}).join('')}</div>
+    ${deptReqs('生産')}</div>`;
+  return h;
+}
+
+/* --- 流通部 --- */
+function viewDist(){
+  const days=weekDays();const k=weekKg(WEEK);const T=JH()?JH().targetKg:5000;const pend=pendingOrders();
+  const roles=MM('流通役割');
+  let h=`<div class="stack">
+    <section class="card pad stack" style="gap:8px"><div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px"><h3>週${(T/1000).toFixed(1)}t目標（さつまいも・納品日ベース）</h3><span class="dim">受発注アプリから自動</span></div>
+      <div style="display:flex;gap:14px;align-items:baseline;flex-wrap:wrap"><span><b style="font-size:26px">${(k.done/1000).toFixed(2)}</b> t 実績</span><span><b style="font-size:20px">${((k.done+k.plan)/1000).toFixed(2)}</b> t 予定込み</span></div>
+      <div class="bar"><i style="width:${Math.min(100,(k.done+k.plan)/T*100)}%;background:#9dbbd9"></i><i style="width:${Math.min(100,k.done/T*100)}%;background:var(--dist)"></i></div>
+      ${pend.length?`<button class="btn" style="background:var(--caut-bg);border-color:#e6c46a;color:var(--caut);justify-content:space-between;display:flex;align-items:center" data-k="${reg(()=>openPending())}"><span>日程未定 ${pend.length}件</span><span>見る ›</span></button>`:''}</section>
+    ${roles.length?`<section class="card pad" style="display:flex;flex-wrap:wrap;gap:4px 16px;font-size:13px"><b>流通部</b>${roles.map(r=>`<span><b>${esc(r.v)}</b> <span class="dim">${esc(r.memo)}</span></span>`).join('')}</section>`:''}
+    <div class="days wide">${days.map(d=>distDay(d)).join('')}</div>
+    <span class="dim">パートさんの出勤・休みは受発注アプリの「シフト」で変えてください（ここは表示だけ）。袋詰能力＝出勤時間×${JH()?JH().bagsPerH:73}袋/人・時（受発注の設定）。</span>
+    ${deptReqs('流通')}</div>`;
+  return h;
+}
+function distDay(d){
+  const rs=routinesOn(d);const pp=plansOn('流通',d);const u=kokoroUsed(d),c=kokoroCap(d);const off=offPeople(d);
+  const kkCls=u>c?'wa2':u<c?'ca2':'ok2';
+  let h=`<article class="dc ${isToday(d)?'today':''}">${dayHead(d)}<div class="db">`;
+  routineWhos().forEach(who=>{const mine=rs.filter(r=>r.who===who);h+=`<div class="sec" style="border:none;padding:0;color:var(--rout)">${esc(who)}（ルーティン）</div>`;h+=mine.length?mine.map(r=>routItem(d,r)).join(''):`<span class="dim">${off.includes(who)?'休み':'なし'}</span>`});
+  h+=`<div class="sec" style="display:flex;justify-content:space-between;align-items:center;gap:4px;flex-wrap:wrap"><span>チームの予定</span><span class="tag2 ${kkCls}">こころ ${u}／${c}名</span></div>`;
+  h+=pp.length?pp.map(p=>planItem(p,true)).join(''):'<span class="dim">まだ入っていません</span>';
+  const offT=off.filter(n=>!routineWhos().includes(n));if(offT.length)h+=`<span class="dim" style="color:var(--warn)">休み：${esc(offT.join('・'))}</span>`;
+  if(JH()){
+    const lanes=[['ready','① 用意','l1'],['ship','② 発送','l2'],['deliver','③ 納品','l3']];
+    const kg=readyKgOn(d),cap=JH().capKg,over=kg>cap;
+    h+=`<div class="sec">出荷（受発注から）</div><div style="display:flex;justify-content:space-between;font-size:12px"><span>用意 <b>${fmt(kg)}kg</b>／上限${fmt(cap)}</span>${over?'<b style="color:var(--warn)">超え</b>':''}</div><div class="bar" style="height:6px"><i style="width:${Math.min(100,kg/cap*100)}%;background:${over?'#b8442a':'var(--dist)'}"></i></div>`;
+    lanes.forEach(([key,lb,cls])=>{const os=ordersOn(key,d);if(!os.length)return;h+=`<span class="lane ${cls}">${lb}</span>`+os.map(o=>`<button class="it ord ${cls==='l1'?'':cls} ${(key==='ready'&&o.readyDone)||(key==='ship'&&o.shipDone)||(key==='deliver'&&o.status==='納品済')?'done':''}" data-k="${reg(()=>openOrder(o))}"><span class="t">${esc(o.cust)}</span><span class="s">${esc(ordShort(o))}</span></button>`).join('')});
+    const so=staffOn(d),need=bagNeedOn(d),bcap=Math.floor(so.h*JH().bagsPerH),short=need>bcap;
+    h+=`<div class="sec">パート出勤・袋詰</div><div style="display:flex;justify-content:space-between;font-size:13px;gap:6px;flex-wrap:wrap"><span><b>${so.n}名・${so.h}h</b></span><span>袋詰 ${fmt(need)}／<b style="${short?'color:var(--warn)':''}">${fmt(bcap)}</b>袋</span></div>`;
+    if(short)h+=`<div class="note w">袋詰が ${fmt(need-bcap)}袋 不足</div>`;
+    h+=`<span class="dim">${so.names.length?esc(so.names.join('・')):'出勤なし'}${so.absent.length?`<br><span style="color:var(--warn)">休み：${esc(so.absent.join('・'))}</span>`:''}</span>`;
+  }
+  h+=`</div><div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line2)"><button class="add" style="border:none;border-right:1px solid var(--line2);color:var(--dist)" data-k="${reg(()=>openPlanForm('流通',d))}">＋ 予定</button><button class="add" style="border:none;color:var(--dist)" data-k="${reg(()=>openKokoro(d))}">こころ</button></div></article>`;
+  return h;
+}
+
+/* --- 営業 --- */
+function viewSales(){
+  const days=weekDays();const k=weekKg(WEEK);const T=JH()?JH().targetKg:5000;const tot=k.done+k.plan;
+  const dl=[];days.forEach(d=>deadlinesOn(d).forEach(x=>dl.push({d,...x})));
+  return `<div class="stack">
+    ${dl.length?`<section class="card pad stack" style="gap:6px;border:2px solid var(--sales)"><h3>今週の受注締切</h3>${dl.map(x=>`<div style="display:flex;justify-content:space-between;gap:8px;font-size:14px;border-bottom:1px dashed #e8e1da;padding-bottom:4px"><b>${mdw(x.d)} ${x.time}</b><span>→ ${x.arrive}曜着の分</span></div>`).join('')}</section>`:''}
+    <section class="card pad stack" style="gap:8px"><div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:6px"><h3>今週の受注（納品日ベース）／週${(T/1000).toFixed(1)}t</h3><span class="dim">受発注アプリから自動</span></div>
+      <div style="display:flex;gap:10px;align-items:baseline"><b style="font-size:28px">${(tot/1000).toFixed(2)}t</b><span>あと ${(Math.max(0,T-tot)/1000).toFixed(2)}t</span></div>
+      <div class="bar"><i style="width:${Math.min(100,tot/T*100)}%;background:var(--sales)"></i></div></section>
+    <div class="days">${days.map(d=>{const pp=plansOn('営業',d);return `<article class="dc ${isToday(d)?'today':''}">${dayHead(d)}<div class="db">${deadlinesOn(d).map(x=>`<div class="it dead" style="min-height:0">受注締切 ${x.time}（${x.arrive}曜着）</div>`).join('')}${pp.length?pp.map(p=>planItem(p)).join(''):'<span class="dim">予定なし</span>'}</div><button class="add" style="color:var(--sales)" data-k="${reg(()=>openPlanForm('営業',d))}">＋ 予定を追加</button></article>`}).join('')}</div>
+    ${deptReqs('営業')}</div>`;
+}
+
+/* ===== 右から開く詳細（引き出し） ===== */
+let DW={};
+function openDw(o){DW=o;drawDw()}
+function closeDw(){DW={};DREG=[];$('drawer').innerHTML=''}
+function drawDw(){
+  const o=DW;if(!o.title){closeDw();return}
+  // 中身が関数なら毎回作り直すので紐づけも作り直す。文字列のときは作った時の紐づけをそのまま使う
+  if(typeof o.body==='function')DREG=[];
+  const body=typeof o.body==='function'?o.body():o.body||'';
+  $('drawer').innerHTML=`<div class="dw"><button class="bg" aria-label="閉じる" data-d="${dreg(closeDw)}"></button><aside role="dialog" aria-modal="true" aria-label="${esc(o.title)}"><div class="dwh" style="background:${o.color||'#1d2320'}"><div class="x"><small>${esc(o.kicker||'')}</small><b>${esc(o.title)}</b></div><button class="ib" aria-label="閉じる" data-d="${dreg(closeDw)}">×</button></div><div class="dwb">${body}</div></aside></div>`;
+  const f=$('drawer').querySelector('[data-focus]');if(f)f.focus();
+}
+DW.refresh=null;
+const kv=rows=>`<dl class="kv">${rows.filter(r=>r[1]!==''&&r[1]!=null).map(r=>`<dt>${esc(r[0])}</dt><dd>${esc(r[1])}</dd>`).join('')}</dl>`;
+const actBtns=list=>`<div class="acts">${list.map(a=>`<button class="btn ${a.cls||''}" data-d="${dreg(a.run)}">${esc(a.label)}</button>`).join('')}</div>`;
+
+function openPlan(p){
+  const x=planText(p);
+  const rows=[['日付',mdw(pdt(p.date))],['部署',p.dept]];
+  if(p.dept==='生産')rows.push(['チーム',p.team],['圃場',p.field],['作業',p.work],['数量',p.qty?`${p.qty}${p.unit||''}`:''],['スポット',p.spot?p.spot+'名':''],['雨天時',p.rain]);
+  else if(p.dept==='流通')rows.push(['だれが',whoText(p)],['なにを',p.work]);
+  else rows.push(['内容',p.work]);
+  rows.push(['メモ',p.memo],['状態',p.state],['最終更新',p.by?`${p.by}（${String(p.at).slice(5,16).replace('T',' ')}）`:'']);
+  const w=wxOf(pdt(p.date));if(p.dept==='生産'&&w)rows.push(['天気',`${w.text}・降水${w.pop===''?'—':w.pop+'%'}${w.rel?'・信頼度'+w.rel:''}`]);
+  openDw({title:x.t,kicker:`${p.dept}${p.team?'・'+p.team:''}・${mdw(pdt(p.date))}`,color:p.dept==='生産'?teamCol(p.team):DCOL[p.dept],body:kv(rows)+actBtns([
+    {label:'直す',run:()=>openPlanForm(p.dept,pdt(p.date),p)},
+    {label:p.state==='完了'?'予定に戻す':'完了にする',cls:'pri',run:async()=>{const st=p.state==='完了'?'予定':'完了';await save('setPlanState',{id:p.id,state:st},st==='完了'?'完了にしました':'予定に戻しました');p.state=st;closeDw();render()}},
+    {label:'消す',run:async()=>{if(!confirmBtn(this))return;await save('setPlanState',{id:p.id,state:'削除'},'消しました');D.plans=D.plans.filter(y=>y.id!==p.id);closeDw();render()}},
+    {label:`${p.dept}${p.dept==='営業'?'':'部'}のページへ`,run:()=>{TAB=DEPT_KEY[p.dept];closeDw();load()}}
+  ])});
+}
+let CONFIRM_T=0;
+function confirmBtn(){const now=Date.now();if(now-CONFIRM_T<4000){CONFIRM_T=0;return true}CONFIRM_T=now;toast('もう一度押すと消します');return false}
+
+function openDay(d,focus){
+  const k=ymd(d);const w=wxOf(d);const list=[];
+  ['生産','流通','営業'].forEach(dept=>{
+    if(dept==='流通')routinesOn(d).forEach(r=>list.push({tag:r.who,col:'var(--rout)',text:r.text+(r.off?'（今週なし）':''),run:()=>openRoutine(d,r)}));
+    if(dept==='営業')deadlinesOn(d).forEach(x=>list.push({tag:'営業',col:'var(--sales)',text:`受注締切 ${x.time}（${x.arrive}曜着）`}));
+    plansOn(dept,d).forEach(p=>list.push({tag:dept==='生産'?(p.team||'生産'):dept,col:dept==='生産'?teamCol(p.team):DCOL[dept],text:planText(p).t+(p.state==='完了'?'（完了）':''),run:()=>openPlan(p)}));
+    if(dept==='流通'&&JH())['ready','ship','deliver'].forEach((key,i)=>ordersOn(key,d).forEach(o=>list.push({tag:['用意','発送','納品'][i],col:['var(--dist)','var(--ship)','var(--ok)'][i],text:`${o.cust}　${ordShort(o)}`,run:()=>openOrder(o)})));
+  });
+  const rows=[['天気',w?`${w.text}・降水${w.pop===''?'—':w.pop+'%'}${w.rel?'・信頼度'+w.rel:''}`:'（予報の範囲外）']];
+  if(JH()){const so=staffOn(d),need=bagNeedOn(d),cap=Math.floor(so.h*JH().bagsPerH);rows.push(['用意量',`${fmt(readyKgOn(d))}kg（上限 ${fmt(JH().capKg)}kg）`],['袋詰',`必要 ${fmt(need)}袋／能力 ${fmt(cap)}袋`],['パート',`${so.n}名・${so.h}h`]);}
+  rows.push(['こころさん',`配置 ${kokoroUsed(d)}／来所 ${kokoroCap(d)}名`]);const off=offPeople(d);if(off.length)rows.push(['休み',off.join('・')]);
+  openDw({title:mdw(d),kicker:'この日の全部署'+(focus?`（${focus}の注意から）`:''),body:kv(rows)+`<div class="stack" style="gap:6px"><h3>この日の予定（${list.length}件）</h3>${list.map(l=>`<button class="li" ${l.run?`data-d="${dreg(l.run)}"`:''}><span class="chip" style="background:${l.col};color:#fff">${esc(l.tag)}</span><span style="flex:1">${esc(l.text)}</span>${l.run?'<span class="dim">›</span>':''}</button>`).join('')||'<span class="dim">予定なし</span>'}</div>`+actBtns([{label:'生産の予定を追加',run:()=>openPlanForm('生産',d)},{label:'流通の予定を追加',run:()=>openPlanForm('流通',d)},{label:'営業の予定を追加',run:()=>openPlanForm('営業',d)},{label:'閉じる',run:closeDw}])});
+}
+function openTeam(t){
+  const pp=D.plans.filter(p=>p.dept==='生産'&&p.team===t&&p.date>=ymd(WEEK)&&p.date<=ymd(addD(WEEK,6))).sort((a,b)=>a.date<b.date?-1:1);
+  openDw({title:t,kicker:'生産部・今週',color:teamCol(t),body:kv([['今週',`${pp.length}件・完了${pp.filter(p=>p.state==='完了').length}件`],['スポット',`延べ${pp.reduce((s,p)=>s+(p.spot||0),0)}名`],['圃場',[...new Set(pp.map(p=>p.field).filter(Boolean))].join('・')]])+
+    `<div class="stack" style="gap:6px"><h3>今週の予定</h3>${pp.map(p=>`<button class="li" data-d="${dreg(()=>openPlan(p))}"><span class="chip" style="background:${teamCol(t)};color:#fff">${W[pdt(p.date).getDay()]}</span><span style="flex:1">${esc(planText(p).t)}${p.state==='完了'?'（完了）':''}</span><span class="dim">›</span></button>`).join('')||'<span class="dim">予定なし</span>'}</div>`+
+    actBtns([{label:'予定を追加',cls:'prod',run:()=>openPlanForm('生産',WEEK,{team:t})},{label:'生産部のページへ',run:()=>{TAB='prod';PROD_TEAM=t;closeDw();load()}}])});
+}
+function openRoutineOf(who){
+  const rs=(D.routines||[]).filter(r=>r.who===who);const role=MM('流通役割').find(r=>r.v===who);
+  openDw({title:who,kicker:'流通部・毎週のルーティン',color:'var(--rout)',body:kv([['役割',role?role.memo:''],['休み',offDaysOf(who)]])+`<div class="stack" style="gap:6px"><h3>曜日ごと</h3>${[1,2,3,4,5,6,0].map(dw=>{const x=rs.filter(r=>r.dow===dw).sort((a,b)=>a.order-b.order);return `<div class="li"><span class="chip c-rout">${W[dw]}</span><span style="flex:1">${x.length?esc(x.map(r=>r.text).join('／')):'<span class="dim">休み・なし</span>'}</span></div>`}).join('')}</div><span class="dim">ルーティンの中身はスプレッドシート「週間スケジュールDB」の「ルーティン」シートで変えられます。今週だけなしにする時は、その日の項目を押してください。</span>`+actBtns([{label:'流通部のページへ',run:()=>{TAB='dist';closeDw();load()}},{label:'閉じる',run:closeDw}])});
+}
+function offDaysOf(who){let s='';String(S('定休','')).split('|').forEach(x=>{const [n,ds]=x.split(':');if(n&&n.trim()===who&&ds)s=ds.split(',').map(v=>W[Number(v)]).join('・')});return s}
+function openRoutine(d,r){
+  openDw({title:r.text,kicker:`${r.who}のルーティン・${mdw(d)}`,color:'var(--rout)',body:kv([['日付',mdw(d)],['担当',r.who],['内容',r.text],['今週',r.off?'なし（この日だけ外している）':'いつもどおり']])+actBtns([
+    {label:r.off?'いつもどおりに戻す':'この日はなしにする',cls:'pri',run:async()=>{const res=await save('toggleRoutine',{date:ymd(d),who:r.who,text:r.text},'変更しました');if(res.off)D.routineOff.push({date:ymd(d),who:r.who,text:r.text});else D.routineOff=D.routineOff.filter(o=>!(o.date===ymd(d)&&o.who===r.who&&o.text===r.text));closeDw();render()}},
+    {label:'閉じる',run:closeDw}])});
+}
+function openDistTeam(){
+  const roles=MM('流通役割');
+  openDw({title:'流通部のメンバー',kicker:'流通部',color:'var(--dist)',body:`<div class="stack" style="gap:6px">${roles.map(r=>`<div class="li"><b style="min-width:64px">${esc(r.v)}</b><span style="flex:1">${esc(r.memo)}</span></div>`).join('')}</div>`+kv([['定休',String(S('定休','')).split('|').filter(Boolean).map(x=>{const [n,ds]=x.split(':');return `${n}：${(ds||'').split(',').map(v=>W[Number(v)]).join('・')}`}).join('\n')],['こころさん',`最大${S('こころ人数',5)}名・来所 ${String(S('こころ来所曜日','')).split(',').filter(x=>x!=='').map(v=>W[Number(v)]).join('・')}`]])+actBtns([{label:'流通部のページへ',run:()=>{TAB='dist';closeDw();load()}},{label:'閉じる',run:closeDw}])});
+}
+function openOrder(o){
+  openDw({title:o.cust,kicker:`受注 No.${o.no}（受発注アプリから・表示のみ）`,color:'var(--dist)',body:kv([['状態',o.status],['① 用意',o.ready?mdw(pdt(o.ready))+(o.readyDone?'（完了）':''):'未定'],['② 発送',o.ship?mdw(pdt(o.ship))+(o.shipDone?'（手配済）':''):'未定'],['③ 納品',o.deliver?mdw(pdt(o.deliver)):''],['中身',ordLong(o)],['重さ',ordKg(o)?fmt(ordKg(o))+'kg':''],['袋数',ordBags(o)?fmt(ordBags(o))+'袋':''],['配送',[o.method,o.carrier].filter(Boolean).join('・')],['申し送り',o.note]])+
+    `<a class="btn pri" style="display:flex;align-items:center;justify-content:center;text-decoration:none" href="${JUHATCHU_URL}" target="_blank" rel="noopener">受発注アプリで開く</a><span class="dim">日程の変更・完了の記録は受発注アプリで行います。</span>`});
+}
+function openOrders(d,key){const os=ordersOn(key,d);openDw({title:`${mdw(d)} の${{ready:'用意',ship:'発送',deliver:'納品'}[key]}`,kicker:'受発注アプリから',color:'var(--dist)',body:`<div class="stack" style="gap:6px">${os.map(o=>`<button class="li" data-d="${dreg(()=>openOrder(o))}"><b>${esc(o.cust)}</b><span style="flex:1">${esc(ordShort(o))}・${fmt(ordKg(o))}kg</span><span class="dim">›</span></button>`).join('')}</div>`})}
+function openPending(all){
+  const pend=pendingOrders();
+  openDw({title:all?'今週の出荷（受発注から）':`日程未定 ${pend.length}件`,kicker:'流通部',color:'var(--dist)',body:(all?kv((()=>{const k=weekKg(WEEK);return [['出荷実績',`${(k.done/1000).toFixed(2)}t`],['予定込み',`${((k.done+k.plan)/1000).toFixed(2)}t（目標 ${(JH()?JH().targetKg/1000:5).toFixed(1)}t）`],['日程未定',pend.length+'件']]})()):'')+
+    `<div class="stack" style="gap:6px"><h3>日程が決まっていない受注</h3>${pend.map(o=>`<button class="li" data-d="${dreg(()=>openOrder(o))}"><b>${esc(o.cust)}</b><span style="flex:1">${esc(ordShort(o))}</span><span class="dim">${o.deliver?md(pdt(o.deliver))+'着':''} ›</span></button>`).join('')||'<span class="dim">ありません</span>'}</div><a class="btn pri" style="display:flex;align-items:center;justify-content:center;text-decoration:none" href="${JUHATCHU_URL}" target="_blank" rel="noopener">受発注アプリで日程を決める</a>`});
+}
+function openKokoro(d){
+  let n=kokoroCap(d);
+  const body=()=>kv([['日付',mdw(d)],['いま配置',kokoroUsed(d)+'名']])+`<div class="f"><span class="lb">こころさん 来所人数</span><div class="stepper"><button aria-label="減らす" data-d="${dreg(()=>{n=Math.max(0,n-1);drawDw()})}">−</button><b>${n}名</b><button aria-label="増やす" data-d="${dreg(()=>{n=Math.min(20,n+1);drawDw()})}">＋</button></div><span class="dim">祝日などで人数が変わる日に入れてください</span></div>`+actBtns([{label:'保存',cls:'dist',run:async()=>{await save('setKokoro',{date:ymd(d),n},'保存しました');D.kokoro[ymd(d)]=n;closeDw();render()}},{label:'やめる',run:closeDw}]);
+  openDw({title:`${mdw(d)} こころさん`,kicker:'流通部',color:'var(--dist)',body});
+}
+
+/* --- 予定の入力フォーム（部署ごとに中身が変わる） --- */
+let F=null;
+function openPlanForm(dept,d,init){
+  const p=init&&init.id?init:null;
+  F={dept,id:p?p.id:'',date:ymd(d),team:(init&&init.team)||(dept==='生産'&&PROD_TEAM!=='全体'?PROD_TEAM:''),field:p?p.field:'',work:p?p.work:'',workFree:'',qty:p?p.qty:'',unit:p?p.unit||'a':'a',spot:p?p.spot:0,rain:p?p.rain:'',memo:p?p.memo:'',
+    who:p?String(p.who||'').split('|').filter(Boolean):[],whoFree:'',kk:p?p.kk||1:1,err:''};
+  if(p&&dept==='生産'&&!M('生産作業').includes(p.work)){F.workFree=p.work;F.work=''}
+  if(p&&dept==='流通'){const ws=M('流通作業');if(!ws.includes(p.work)){F.workFree=p.work;F.work=''}const ms=M('流通メンバー');F.whoFree=F.who.filter(x=>!ms.includes(x)).join('、');F.who=F.who.filter(x=>ms.includes(x))}
+  openDw({title:p?'予定を直す':'予定を追加',kicker:`${dept}・${mdw(d)}`,color:DCOL[dept],body:formBody});
+}
+function chips(list,cur,onPick,multi){return `<div class="chips">${list.map(v=>{const on=multi?cur.includes(v):cur===v;return `<button class="pill ${on?'on':''}" aria-pressed="${on}" data-d="${dreg(()=>{onPick(v);drawDw()})}">${esc(v==='こころ'?'こころさん':v==='パート'?'パートさん':v)}</button>`}).join('')}</div>`}
+function inp(key,ph,type){return `<input class="inp" ${type?`type="${type}" inputmode="decimal"`:''} value="${esc(F[key])}" placeholder="${esc(ph)}" oninput="F['${key}']=this.value">`}
+function formBody(){
+  let h=`<div class="f"><span class="lb">日付</span><input class="inp" type="date" value="${esc(F.date)}" oninput="F.date=this.value"></div>`;
+  if(F.dept==='生産'){
+    h+=`<div class="f"><span class="lb">チーム</span>${chips(teams(),F.team,v=>F.team=v)}</div>
+      <div class="f"><span class="lb">圃場</span>${chips(M('圃場'),F.field,v=>F.field=F.field===v?'':v)}</div>
+      <div class="f"><span class="lb">作業（選ぶか、下に書く）</span>${chips(M('生産作業'),F.work,v=>F.work=F.work===v?'':v)}${inp('workFree','一覧にない作業はここに')}</div>
+      <div class="f" style="background:#fafbf9;border:1px dashed #b9c4b9;border-radius:10px;padding:10px"><span class="lb">数量（任意）</span><div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><div style="width:110px">${inp('qty','例：30','number')}</div>${chips(M('単位'),F.unit,v=>F.unit=v)}</div></div>
+      <div class="f"><span class="lb">スポット応援</span><div class="stepper"><button aria-label="減らす" data-d="${dreg(()=>{F.spot=Math.max(0,(+F.spot||0)-1);drawDw()})}">−</button><b>${+F.spot||0}名</b><button aria-label="増やす" data-d="${dreg(()=>{F.spot=Math.min(30,(+F.spot||0)+1);drawDw()})}">＋</button></div></div>
+      <div class="f"><span class="lb">雨天時の代わりの作業（任意）</span>${inp('rain','例：倉庫で機械整備')}</div>`;
+  }else if(F.dept==='流通'){
+    h+=`<div class="f"><span class="lb">だれが（複数OK・選ぶか書く）</span>${chips(M('流通メンバー'),F.who,v=>{const i=F.who.indexOf(v);if(i>=0)F.who.splice(i,1);else F.who.push(v)},true)}${inp('whoFree','一覧にない人・応援など')}</div>`;
+    if(F.who.includes('こころ'))h+=`<div class="f"><span class="lb">こころさん 何名？</span><div class="stepper"><button aria-label="減らす" data-d="${dreg(()=>{F.kk=Math.max(1,F.kk-1);drawDw()})}">−</button><b>${F.kk}名</b><button aria-label="増やす" data-d="${dreg(()=>{F.kk=Math.min(20,F.kk+1);drawDw()})}">＋</button></div><span class="dim">この日の来所：${kokoroCap(pdt(F.date)||WEEK)}名／ほかで配置済み：${kokoroUsed(pdt(F.date)||WEEK)}名</span></div>`;
+    h+=`<div class="f"><span class="lb">なにを（選ぶか書く）</span>${chips(M('流通作業'),F.work,v=>F.work=F.work===v?'':v)}${inp('workFree','例：〇〇様分の選別')}</div>`;
+  }else{
+    h+=`<div class="f"><span class="lb">予定（自由に書く）</span><textarea class="inp" data-focus placeholder="例：10時 〇〇様訪問、定期便の相談" oninput="F.workFree=this.value">${esc(F.work||F.workFree)}</textarea></div>`;
+  }
+  h+=`<div class="f"><span class="lb">メモ（任意）</span>${inp('memo','')}</div>`;
+  if(F.err)h+=`<div class="err">${esc(F.err)}</div>`;
+  h+=actBtns([{label:'やめる',run:closeDw},{label:F.id?'保存する':'登録する',cls:DEPT_KEY[F.dept],run:submitPlan}]);
+  return h;
+}
+async function submitPlan(){
+  const f=F;let work='',who='';
+  if(f.dept==='生産'){work=String(f.workFree||'').trim()||f.work;if(!f.team){f.err='チームを選んでください';return drawDw()}if(!work){f.err='作業を選ぶか書いてください';return drawDw()}}
+  else if(f.dept==='流通'){const free=String(f.whoFree||'').split(/[、,・\s]+/).filter(Boolean);who=[...f.who,...free].join('|');const wf=String(f.workFree||'').trim();work=wf?(f.work?`${f.work}（${wf}）`:wf):f.work;if(!who||!work){f.err='「だれが」と「なにを」を入れてください';return drawDw()}}
+  else{work=String(f.workFree||'').trim();if(!work){f.err='予定を書いてください';return drawDw()}}
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(f.date)){f.err='日付を入れてください';return drawDw()}
+  const plan={id:f.id||'',date:f.date,dept:f.dept,team:f.dept==='生産'?f.team:'',field:f.dept==='生産'?f.field:'',work,qty:f.dept==='生産'?String(f.qty||''):'',unit:f.dept==='生産'&&f.qty?f.unit:'',spot:f.dept==='生産'?+f.spot||0:0,rain:f.dept==='生産'?f.rain:'',who,kk:/こころ/.test(who)?f.kk:0,memo:f.memo};
+  const r=await save('savePlan',{plan},f.id?'保存しました':'登録しました');
+  const local={...plan,id:r.id,state:'予定',by:ME,at:new Date().toISOString()};
+  const i=D.plans.findIndex(p=>p.id===r.id);if(i>=0){local.state=D.plans[i].state;D.plans[i]=local}else D.plans.push(local);
+  closeDw();render();
+}
+
+/* --- 依頼 --- */
+function openReq(r){
+  openDw({title:r.text,kicker:`部署間の依頼・${r.from} → ${r.to}`,color:DCOL[r.from],body:kv([['依頼元 → 先',`${r.from} → ${r.to}`],['期限',r.due?mdw(pdt(r.due)):'（未定）'],['担当',r.owner||'（未定）'],['状態',r.state],['書いた日',r.made?mdw(pdt(r.made)):''],['最終更新',r.by]])+actBtns([
+    {label:r.state==='未対応'?'対応済にする':'未対応に戻す',cls:'pri',run:async()=>{const st=r.state==='未対応'?'対応済':'未対応';await save('setReqState',{id:r.id,state:st},'変更しました');r.state=st;closeDw();render()}},
+    {label:'直す（担当・期限）',run:()=>openReqForm(r)},
+    {label:'消す',run:async()=>{if(!confirmBtn())return;await save('setReqState',{id:r.id,state:'削除'},'消しました');D.reqs=D.reqs.filter(x=>x.id!==r.id);closeDw();render()}},
+    {label:'閉じる',run:closeDw}])});
+}
+let RF=null;
+function openReqForm(r,from){
+  RF=r?{id:r.id,from:r.from,to:r.to,text:r.text,due:r.due,owner:r.owner||'',err:''}:{id:'',from:from||'生産',to:from==='流通'?'生産':'流通',text:'',due:'',owner:'',err:''};
+  const body=()=>`<div class="f"><span class="lb">依頼元</span>${chips(['生産','流通','営業'],RF.from,v=>RF.from=v)}</div><div class="f"><span class="lb">依頼先</span>${chips(['生産','流通','営業'],RF.to,v=>RF.to=v)}</div>
+    <div class="f"><span class="lb">内容</span><textarea class="inp" data-focus oninput="RF.text=this.value" placeholder="例：金曜着分の大サイズの在庫を確認したい">${esc(RF.text)}</textarea></div>
+    <div class="f"><span class="lb">期限（任意）</span><input class="inp" type="date" value="${esc(RF.due)}" oninput="RF.due=this.value"></div>
+    <div class="f"><span class="lb">担当（任意）</span><input class="inp" value="${esc(RF.owner)}" oninput="RF.owner=this.value" placeholder="会議で決めた人"></div>
+    ${RF.err?`<div class="err">${esc(RF.err)}</div>`:''}`+actBtns([{label:'やめる',run:closeDw},{label:RF.id?'保存する':'登録する',cls:'pri',run:async()=>{if(!String(RF.text).trim()){RF.err='内容を書いてください';return drawDw()}
+      const req={id:RF.id,from:RF.from,to:RF.to,text:RF.text.trim(),due:RF.due,owner:RF.owner};const res=await save('saveReq',{req},'保存しました');
+      const i=D.reqs.findIndex(x=>x.id===res.id);const loc={...req,id:res.id,state:i>=0?D.reqs[i].state:'未対応',made:i>=0?D.reqs[i].made:ymd(TODAY),by:ME};if(i>=0)D.reqs[i]=loc;else D.reqs.push(loc);closeDw();render()}}]);
+  openDw({title:r?'依頼を直す':'依頼を書く',kicker:'部署間の依頼',body});
+}
+/* --- 振り返り --- */
+function openReview(dept,week,r){
+  const R={k1:r.k1||'',k2:r.k2||'',good:r.good||'',bad:r.bad||''};
+  window.RV=R;
+  const body=`<span class="dim">1行に1つずつ書いてください。自動集計は受発注アプリと予定から出しています。</span>
+    <div class="f"><span class="lb">○ できたこと</span><textarea class="inp" data-focus oninput="RV.good=this.value">${esc(R.good)}</textarea></div>
+    <div class="f"><span class="lb">× できなかったこと・理由</span><textarea class="inp" oninput="RV.bad=this.value">${esc(R.bad)}</textarea></div>
+    <div class="f"><span class="lb">数字（任意・手入力）</span><input class="inp" value="${esc(R.k1)}" oninput="RV.k1=this.value" placeholder="例：袋詰 5,840袋"><input class="inp" value="${esc(R.k2)}" oninput="RV.k2=this.value" placeholder="例：73袋/人・時ペース"></div>`+
+    actBtns([{label:'やめる',run:closeDw},{label:'保存する',cls:DEPT_KEY[dept],run:async()=>{await save('saveReview',{week,dept,...RV},'保存しました');const i=D.reviews.findIndex(x=>x.week===week&&x.dept===dept);const loc={week,dept,...RV,by:ME};if(i>=0)D.reviews[i]=loc;else D.reviews.push(loc);closeDw();render()}}]);
+  openDw({title:`${dept}の振り返り`,kicker:`${mdw(pdt(week))}〜${mdw(addD(pdt(week),6))}`,color:DCOL[dept],body});
+}
+
+/* ===== 起動 ===== */
+(function start(){
+  setWeek(new Date());MONTH=new Date(TODAY.getFullYear(),TODAY.getMonth(),1);
+  try{const t=localStorage.getItem('sched_tab');if(t&&['meet','prod','dist','sales'].includes(t))TAB=t;ME=localStorage.getItem('sched_user')||'';KEY=localStorage.getItem('sched_key')||''}catch(e){}
+  if(!KEY){showLogin();return}
+  $('meName').textContent=ME;load(true);
+})();
+</script>
+</body>
+</html>
