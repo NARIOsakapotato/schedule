@@ -452,22 +452,39 @@ function distDay(d){
   const rs=routinesOn(d);const pp=plansOn('流通',d);const u=kokoroUsed(d),c=kokoroCap(d);const off=offPeople(d);
   const kkCls=u>c?'wa2':u<c?'ca2':'ok2';
   let h=`<article class="dc ${isToday(d)?'today':''}">${dayHead(d)}<div class="db">`;
-  routineWhos().forEach(who=>{const mine=rs.filter(r=>r.who===who);h+=`<div class="sec" style="border:none;padding:0;color:var(--rout)">${esc(who)}（ルーティン）</div>`;h+=mine.length?mine.map(r=>routItem(d,r)).join(''):`<span class="dim">${off.includes(who)?'休み':'なし'}</span>`});
-  h+=`<div class="sec" style="display:flex;justify-content:space-between;align-items:center;gap:4px;flex-wrap:wrap"><span>チームの予定</span><span class="tag2 ${kkCls}">こころ ${u}／${c}名</span></div>`;
+  // 1) チームの予定（メイン）
+  h+=`<div style="display:flex;justify-content:space-between;align-items:center;gap:4px;flex-wrap:wrap"><span class="sec" style="border:none;padding:0">チームの予定</span><span class="tag2 ${kkCls}">こころ ${u}／${c}名</span></div>`;
   h+=pp.length?pp.map(p=>planItem(p,true)).join(''):'<span class="dim">まだ入っていません</span>';
   const offT=off.filter(n=>!routineWhos().includes(n));if(offT.length)h+=`<span class="dim" style="color:var(--warn)">休み：${esc(offT.join('・'))}</span>`;
-  if(JH()){
-    const lanes=[['ready','① 用意','l1'],['ship','② 発送','l2'],['deliver','③ 納品','l3']];
-    const kg=readyKgOn(d),cap=JH().capKg,over=kg>cap;
-    h+=`<div class="sec">出荷（受発注から）</div><div style="display:flex;justify-content:space-between;font-size:12px"><span>用意 <b>${fmt(kg)}kg</b>／上限${fmt(cap)}</span>${over?'<b style="color:var(--warn)">超え</b>':''}</div><div class="bar" style="height:6px"><i style="width:${Math.min(100,kg/cap*100)}%;background:${over?'#b8442a':'var(--dist)'}"></i></div>`;
-    lanes.forEach(([key,lb,cls])=>{const os=ordersOn(key,d);if(!os.length)return;h+=`<span class="lane ${cls}">${lb}</span>`+os.map(o=>`<button class="it ord ${cls==='l1'?'':cls} ${(key==='ready'&&o.readyDone)||(key==='ship'&&o.shipDone)||(key==='deliver'&&o.status==='納品済')?'done':''}" data-k="${reg(()=>openOrder(o))}"><span class="t">${esc(o.cust)}</span><span class="s">${esc(ordShort(o))}</span></button>`).join('')});
-    const so=staffOn(d),need=bagNeedOn(d),bcap=Math.floor(so.h*JH().bagsPerH),short=need>bcap;
-    h+=`<div class="sec">パート出勤・袋詰</div><div style="display:flex;justify-content:space-between;font-size:13px;gap:6px;flex-wrap:wrap"><span><b>${so.n}名・${so.h}h</b></span><span>袋詰 ${fmt(need)}／<b style="${short?'color:var(--warn)':''}">${fmt(bcap)}</b>袋</span></div>`;
-    if(short)h+=`<div class="note w">袋詰が ${fmt(need-bcap)}袋 不足</div>`;
-    h+=`<span class="dim">${so.names.length?esc(so.names.join('・')):'出勤なし'}${so.absent.length?`<br><span style="color:var(--warn)">休み：${esc(so.absent.join('・'))}</span>`:''}</span>`;
-  }
+  // 2) ルーティン
+  routineWhos().forEach(who=>{const mine=rs.filter(r=>r.who===who);h+=`<div class="sec" style="color:var(--rout)">${esc(who)}（ルーティン）</div>`;h+=mine.length?mine.map(r=>routItem(d,r)).join(''):`<span class="dim">${off.includes(who)?'休み':'なし'}</span>`});
+  // 3) 出荷は1行の要約だけ。押すと中身が開く
+  h+=shipSummary(d);
   h+=`</div><div style="display:grid;grid-template-columns:1fr 1fr;border-top:1px solid var(--line2)"><button class="add" style="border:none;border-right:1px solid var(--line2);color:var(--dist)" data-k="${reg(()=>openPlanForm('流通',d))}">＋ 予定</button><button class="add" style="border:none;color:var(--dist)" data-k="${reg(()=>openKokoro(d))}">こころ</button></div></article>`;
   return h;
+}
+function shipStats(d){
+  const so=staffOn(d),need=bagNeedOn(d),bcap=Math.floor(so.h*JH().bagsPerH);
+  const kg=readyKgOn(d),dl=ordersOn('deliver',d);
+  return {so,need,bcap,kg,over:kg>JH().capKg,short:need>bcap,ready:ordersOn('ready',d).length,ship:ordersOn('ship',d).length,dl:dl.length,dlKg:dl.reduce((a,o)=>a+ordKg(o),0)};
+}
+function shipSummary(d){
+  if(!JH())return '';
+  const x=shipStats(d);
+  const empty=!x.kg&&!x.ready&&!x.ship&&!x.dl;
+  const parts=[];
+  if(x.kg)parts.push(`用意 ${fmt(x.kg)}kg`);
+  if(x.dl)parts.push(`納品 ${x.dl}件`);
+  if(!x.kg&&x.ship)parts.push(`発送 ${x.ship}件`);
+  const warn=[];if(x.over)warn.push('上限超え');if(x.short)warn.push(`袋詰 ${fmt(x.need-x.bcap)}袋不足`);
+  return `<button class="it ${warn.length?'warn':''}" style="margin-top:4px" data-k="${reg(()=>openShipDay(d))}" aria-label="${mdw(d)}の出荷の中身を開く"><span class="t">出荷　${empty?'なし':esc(parts.join('・'))}</span><span class="s" style="${warn.length?'color:var(--warn);font-weight:700':''}">${warn.length?esc(warn.join('・'))+'　':''}パート${x.so.n}名・${x.so.h}h　中身を見る ›</span></button>`;
+}
+function openShipDay(d){
+  const x=shipStats(d);
+  const lanes=[['ready','① 用意（倉庫で準備）','var(--dist)'],['ship','② 発送（集荷・配達）','var(--ship)'],['deliver','③ 納品（客先着）','var(--ok)']];
+  let list='';
+  lanes.forEach(([key,lb,col])=>{const os=ordersOn(key,d);if(!os.length)return;list+=`<div class="stack" style="gap:6px"><h3 style="color:${col}">${lb}　${os.length}件</h3>${os.map(o=>`<button class="li" data-d="${dreg(()=>openOrder(o))}"><b>${esc(o.cust)}</b><span style="flex:1">${esc(ordShort(o))}・${fmt(ordKg(o))}kg</span><span class="dim">›</span></button>`).join('')}</div>`});
+  openDw({title:`${mdw(d)} の出荷`,kicker:'流通部・受発注アプリから',color:'var(--dist)',body:kv([['用意量',`${fmt(x.kg)}kg（上限 ${fmt(JH().capKg)}kg）${x.over?'　上限超え':''}`],['納品',x.dl?`${x.dl}件・${(x.dlKg/1000).toFixed(2)}t`:'なし'],['袋詰',`必要 ${fmt(x.need)}袋／能力 ${fmt(x.bcap)}袋${x.short?`　${fmt(x.need-x.bcap)}袋不足`:''}`],['パート出勤',`${x.so.n}名・${x.so.h}h`],['出勤する人',x.so.names.join('・')||'なし'],['休み',x.so.absent.join('・')]])+(list||'<span class="dim">この日の受注はありません</span>')+`<a class="btn pri" style="display:flex;align-items:center;justify-content:center;text-decoration:none" href="${JUHATCHU_URL}" target="_blank" rel="noopener">受発注アプリで開く</a><span class="dim">日程・シフトの変更は受発注アプリで行います。</span>`});
 }
 
 /* --- 営業 --- */
