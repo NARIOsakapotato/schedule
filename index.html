@@ -20,6 +20,7 @@ button,input,textarea,select{font:inherit;color:inherit}
 button{cursor:pointer}
 a{color:var(--dist)}
 [hidden]{display:none!important}
+.mask{-webkit-text-security:disc;text-security:disc}
 .wrap{max-width:1400px;margin:0 auto;padding:0 12px}
 /* header */
 .top{position:sticky;top:0;z-index:20;background:#1d2320;color:#fff;padding:8px 0 0;padding-top:calc(8px + env(safe-area-inset-top))}
@@ -155,7 +156,7 @@ textarea.inp{padding:8px 10px;min-height:90px;resize:vertical}
     <h2>週間スケジュール</h2>
     <span class="dim">オオサカポテト 社内用</span>
     <div class="f"><label for="lgUser">名前</label><select id="lgUser" class="inp" style="font-size:18px;min-height:52px"></select></div>
-    <div class="f"><label for="lgKey">合言葉</label><div style="display:flex;gap:6px"><input id="lgKey" class="inp" type="password" autocomplete="current-password" autocapitalize="off" autocorrect="off" spellcheck="false" enterkeyhint="go" style="flex:1;font-size:18px;min-height:52px"><button type="button" class="btn" id="lgEye" aria-label="合言葉を表示する" aria-pressed="false" style="min-width:64px;min-height:52px">表示</button></div><span class="dim">一度入れると、この端末では次から自動で入れます</span></div>
+    <div class="f"><label for="lgKey">合言葉</label><div style="display:flex;gap:6px"><input id="lgKey" class="inp mask" type="text" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" inputmode="text" enterkeyhint="go" placeholder="日本語でも入力できます" style="flex:1;font-size:18px;min-height:52px"><button type="button" class="btn" id="lgEye" aria-label="合言葉を表示する" aria-pressed="false" style="min-width:64px;min-height:52px">表示</button></div><span class="dim">一度入れると、この端末では次から自動で入れます</span></div>
     <button class="btn pri" id="lgOk" style="min-height:52px;font-size:17px">入る</button>
     <div id="lgErr" class="dim" role="alert"></div>
   </div>
@@ -249,8 +250,8 @@ function showLogin(msg){$('login').hidden=false;$('lgErr').textContent=msg||'';
   fetch(API_URL).then(r=>r.json()).then(j=>{const s=$('lgUser');s.innerHTML=(j.users||[]).map(u=>`<option>${esc(u)}</option>`).join('');const sv=localStorage.getItem('sched_user');if(sv)s.value=sv}).catch(()=>{$('lgErr').textContent='APIに接続できません（電波・URLを確認）'})}
 $('lgOk').onclick=async()=>{ME=$('lgUser').value;KEY=$('lgKey').value;$('lgErr').textContent='確認中…';
   try{await api('ping',{});try{localStorage.setItem('sched_user',ME);localStorage.setItem('sched_key',KEY)}catch(e){}$('login').hidden=true;$('meName').textContent=ME;load(true)}catch(e){$('lgErr').textContent=e.message}};
-$('lgKey').onkeydown=e=>{if(e.key==='Enter')$('lgOk').click()};
-$('lgEye').onclick=()=>{const i=$('lgKey');const show=i.type==='password';i.type=show?'text':'password';$('lgEye').textContent=show?'隠す':'表示';$('lgEye').setAttribute('aria-pressed',String(show));$('lgEye').setAttribute('aria-label',show?'合言葉を隠す':'合言葉を表示する');i.focus()};
+$('lgKey').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229)$('lgOk').click()};
+$('lgEye').onclick=()=>{const i=$('lgKey');const show=i.classList.contains('mask');i.classList.toggle('mask',!show);$('lgEye').textContent=show?'隠す':'表示';$('lgEye').setAttribute('aria-pressed',String(show));$('lgEye').setAttribute('aria-label',show?'合言葉を隠す':'合言葉を表示する');i.focus()};
 $('logoutBtn').onclick=()=>{try{localStorage.removeItem('sched_key')}catch(e){}KEY='';showLogin('ログアウトしました')};
 $('reloadBtn').onclick=()=>load(true);
 
