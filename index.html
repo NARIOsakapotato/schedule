@@ -687,15 +687,18 @@ function viewSales(){
 
 /* ===== 右から開く詳細（引き出し） ===== */
 let DW={};
-function openDw(o){DW=o;drawDw()}
+function openDw(o){DW=o;DW._fresh=true;drawDw()}
 function closeDw(){DW={};DREG=[];$('drawer').innerHTML=''}
 function drawDw(){
   const o=DW;if(!o.title){closeDw();return}
   // 中身が関数なら毎回作り直すので紐づけも作り直す。文字列のときは作った時の紐づけをそのまま使う
   if(typeof o.body==='function')DREG=[];
+  // 同じ引き出しを描き直すときは、スクロール位置を保つ（圃場などを選ぶたびに上へ戻らないように）
+  const prevAside=$('drawer').querySelector('aside');const keepTop=!o._fresh&&prevAside?prevAside.scrollTop:0;const fresh=!!o._fresh;o._fresh=false;
   const body=typeof o.body==='function'?o.body():o.body||'';
   $('drawer').innerHTML=`<div class="dw"><button class="bg" aria-label="閉じる" data-d="${dreg(closeDw)}"></button><aside role="dialog" aria-modal="true" aria-label="${esc(o.title)}"><div class="dwh" style="background:${o.color||'#1d2320'}"><div class="x"><small>${esc(o.kicker||'')}</small><b>${esc(o.title)}</b></div><button class="ib" aria-label="閉じる" data-d="${dreg(closeDw)}">×</button></div><div class="dwb">${body}</div></aside></div>`;
-  const f=$('drawer').querySelector('[data-focus]');if(f)f.focus();
+  const na=$('drawer').querySelector('aside');if(na&&keepTop)na.scrollTop=keepTop;
+  if(fresh){const f=$('drawer').querySelector('[data-focus]');if(f)f.focus({preventScroll:true})}
 }
 DW.refresh=null;
 const kv=rows=>`<dl class="kv">${rows.filter(r=>r[1]!==''&&r[1]!=null).map(r=>`<dt>${esc(r[0])}</dt><dd>${esc(r[1])}</dd>`).join('')}</dl>`;
