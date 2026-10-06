@@ -165,6 +165,21 @@ textarea.inp{padding:8px 10px;min-height:90px;resize:vertical}
 .mode button{min-height:40px;border:none;border-radius:8px;background:transparent;font-weight:700;font-size:14px;color:var(--sub)}.mode button.on{background:#fff;color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.12)}
 .mrow{width:100%;text-align:left;display:flex;flex-direction:column;gap:2px;padding:8px 10px;border-radius:8px;border:1px solid #e1e5e0;background:#f8faf7;min-height:44px}
 .mrow.on{border:2px solid var(--prod);background:#eaf2eb}
+.m3{display:grid;gap:12px}
+@media (min-width:1000px){.m3{grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}}
+.mc-h{display:flex;justify-content:space-between;align-items:baseline;padding:8px 12px;border-bottom:1px solid var(--line2);background:var(--soft)}.mc-h.now{background:#e3eefb}
+.mc-g{padding:6px 12px;border-bottom:1px solid var(--line2);display:flex;flex-direction:column;gap:6px}
+.mc-dow{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));font-size:11px;text-align:center;background:var(--soft);border-bottom:1px solid #e6e9e5}.mc-dow span{padding:2px 0}.mc-dow .sa{color:#1c4f8a}.mc-dow .su{color:#a3261b}
+.mwk{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));row-gap:1px;padding-bottom:3px;border-bottom:1px solid #e6e9e5}
+.mwk .dy{grid-row:1/-1;border:none;border-right:1px solid var(--line2);background:#fff;display:flex;align-items:flex-start;justify-content:flex-start;padding:2px 4px;min-height:44px;font-size:12px;font-weight:700;color:#3a413d;text-align:left}
+.mwk .dy.we{background:#fbfaf8}.mwk .dy.sa{color:#1c4f8a}.mwk .dy.su{color:#a3261b}.mwk .dy.out{background:#f4f5f3}
+.mwk .dy.sel{background:#eaf2eb;box-shadow:inset 0 0 0 2px var(--prod)}.mwk .dy.td span{color:#fff;background:#1c4f8a;border-radius:10px;padding:0 6px}
+.mwk .sg{z-index:1;height:20px;margin:0 2px;border:none;padding:0 4px;color:#fff;font-size:11px;font-weight:700;line-height:20px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-radius:5px;min-width:0}
+.mwk .sg.cl{margin-left:0;border-top-left-radius:0;border-bottom-left-radius:0}.mwk .sg.cr{margin-right:0;border-top-right-radius:0;border-bottom-right-radius:0}.mwk .sg.on{outline:3px solid #e0a32e;outline-offset:-1px}
+.mwk .more{z-index:1;border:none;background:transparent;font-size:11px;font-weight:700;color:#3a413d;text-align:left;padding:0 4px;height:20px}
+.xw,.xp,.xu{font-size:12px;font-weight:700;border-radius:4px;padding:0 6px}.xw{color:#1f4d2a;background:#eaf2eb;border:1px solid #9cc0a3}.xp{color:#1c4f8a;background:#e3eefb;border:1px solid #a9c4e6}.xu{color:#545c57;background:#f1f1ef;border:1px dashed #b5bab6;font-weight:400}
+.mfpv{border-radius:8px;padding:6px 10px;display:flex;flex-direction:column;gap:4px;background:#f4f7f3;margin-top:6px}.mfpv.warn{background:#fbe4d6}
+.pvbar{align-self:flex-start;max-width:100%;height:22px;line-height:22px;padding:0 8px;border-radius:5px;color:#fff;font-size:12px;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .memo-note{background:#fff8e6;border:1px solid #ecd9a8;border-radius:10px;padding:8px 12px;font-size:13px;color:#5a4310}
 .qrow{display:flex;gap:8px;align-items:center;padding:6px 8px;border-radius:8px;background:#f6f7f5;font-size:14px}
 .teamband{border-radius:10px;padding:8px 12px;color:#fff;display:flex;flex-direction:column;gap:2px}.teamband b{font-size:15px}.teamband span{font-size:12px;opacity:.95}
@@ -286,7 +301,7 @@ function pendUI(){const el=$('pend');if(!el)return;el.textContent=PENDING?`保�
 async function saveBg(action,payload,okMsg){PENDING++;pendUI();try{const r=await api(action,payload);if(okMsg)toast(okMsg);return r}catch(e){toast('保存できませんでした：'+e.message);throw e}finally{PENDING--;pendUI()}}
 window.addEventListener('beforeunload',e=>{if(PENDING>0){e.preventDefault();e.returnValue='保存中です'}});
 function range(){
-  if(isMonth()){const a=new Date(MONTH.getFullYear(),MONTH.getMonth(),1);const b=new Date(MONTH.getFullYear(),MONTH.getMonth()+1,0);return {from:ymd(monday(a)),to:ymd(addD(monday(b),6))}}
+  if(isMonth()){const a=new Date(MONTH.getFullYear(),MONTH.getMonth(),1);const b=new Date(MONTH.getFullYear(),MONTH.getMonth()+(TAB==='prod'?3:1),0);return {from:ymd(monday(a)),to:ymd(addD(monday(b),6))}}
   return {from:ymd(addD(WEEK,-7)),to:ymd(addD(WEEK,6))};
 }
 let LOADKEY='';
@@ -306,17 +321,19 @@ async function load(force,fresh){
   // 予定と受発注を同時に取りに行く（予定が先に届いたら先に表示）
   const tA=performance.now();
   const jhSeq=++JHSEQ;JH_LOADING=true;T_JH=null;
-  const pJh=api('loadJh',{...r,fresh:!!fresh}).then(res=>({res,t:(performance.now()-tA)/1000})).catch(err=>({err}));
+  // 生産の月間は受発注を使わないので取りに行かない
+  const skipJh=TAB==='prod'&&isMonth();
+  const pJh=skipJh?Promise.resolve({skip:true}):api('loadJh',{...r,fresh:!!fresh}).then(res=>({res,t:(performance.now()-tA)/1000})).catch(err=>({err}));
   try{const nd=await api('load',{...r,fresh:!!fresh,skipJh:true});if(seq!==LOADSEQ)return;T_MAIN=(performance.now()-tA)/1000;MAIN_MS=nd.ms&&nd.ms.total;
     if(D){(D.plans||[]).filter(p=>p.pending).forEach(p=>{if(!nd.plans.some(x=>x.id===p.id))nd.plans.push(p)});(D.monthItems||[]).filter(x=>x.pending).forEach(x=>{if(!(nd.monthItems||[]).some(y=>y.id===x.id))(nd.monthItems=nd.monthItems||[]).push(x)})}
     // 古いAPI（受発注も一緒に返す）ならそれを使う。新しいAPIなら受発注は別に届くので、届くまでは手元の分を残す
     const oldApi=nd.jh!=null||nd.jhError;
     if(!oldApi&&D&&LOADKEY===k&&JH_LOADING){nd.jh=D.jh;nd.jhError=D.jhError||''}
-    D=nd;LOADKEY=k;TODAY=new Date();if(oldApi)JH_LOADING=false;
+    D=nd;LOADKEY=k;TODAY=new Date();if(oldApi||skipJh)JH_LOADING=false;if(skipJh)T_JH=null;
     cacheSave(k);lastLoadLabel();render()}
   catch(e){if(seq!==LOADSEQ)return;if(D&&LOADKEY===k){$('lastLoad').textContent='更新できませんでした';toast('最新を読めませんでした：'+e.message)}else $('view').innerHTML=`<div class="err">読み込みに失敗しました：${esc(e.message)}</div>`}
   finally{if(seq===LOADSEQ)busy(false)}
-  const j=await pJh;if(jhSeq!==JHSEQ||LOADKEY!==k||!D)return;
+  const j=await pJh;if(j.skip||jhSeq!==JHSEQ||LOADKEY!==k||!D)return;
   JH_LOADING=false;
   if(j.res){D.jh=j.res.jh;D.jhError=j.res.jhError||'';T_JH=j.t;JH_MS=j.res.cached?0:(j.res.ms&&j.res.ms.total);if(JH_MS==null)JH_MS=null;cacheSave(k);lastLoadLabel();render()}
   else if(!/unknown action/.test(String(j.err&&j.err.message))){D.jhError='受発注を読めませんでした：'+j.err.message;render()}
@@ -426,7 +443,7 @@ function pendingOrders(){if(!JH())return [];return JH().orders.filter(o=>o.statu
 function render(){
   REG=[];
   document.querySelectorAll('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===TAB));
-  if(isMonth())$('wkLabel').textContent=`${MONTH.getFullYear()}年${MONTH.getMonth()+1}月`;else setWeek(WEEK);
+  if(isMonth()){const e=new Date(MONTH.getFullYear(),MONTH.getMonth()+2,1);$('wkLabel').textContent=TAB==='prod'?`${MONTH.getFullYear()}年${MONTH.getMonth()+1}月〜${e.getFullYear()!==MONTH.getFullYear()?e.getFullYear()+'年':''}${e.getMonth()+1}月`:`${MONTH.getFullYear()}年${MONTH.getMonth()+1}月`}else setWeek(WEEK);
   $('wkNow').textContent=isMonth()?'今月':'今週';
   if(!D){$('view').innerHTML='';return}
   const warn=[D.jhError,D.weatherError,TAB==='prod'?D.fieldsError:'',D.fields===undefined?'APIが古い版のままです（Apps Scriptで「新バージョン」をデプロイしてください）':''].filter(Boolean).map(m=>`<div class="err">${esc(m)}</div>`).join('');
@@ -576,36 +593,108 @@ function calGrid(cell){
   return h+'</div>';
 }
 
-/* 生産の月間：週間とは別の段取り表（期間つき） */
+/* 生産の月間：週間とは別の段取り表。3か月分のカレンダーに、日をまたぐ帯で出す */
+let MOPEN={},MGOAL='';
+const M3=()=>[0,1,2].map(i=>new Date(MONTH.getFullYear(),MONTH.getMonth()+i,1));
+const ymOf=d=>`${d.getFullYear()}-${pad(d.getMonth()+1)}`;
+const lastOf=d=>new Date(d.getFullYear(),d.getMonth()+1,0);
+const prodWin=()=>{const ms=M3();return {s:ymd(ms[0]),e:ymd(lastOf(ms[2]))}};
+/* 内容の文から「作業」と「場所」を読み取る（タスク一覧・圃場一覧を使う） */
+const WORK_ALIAS=[['収穫準備','収穫準備'],['試し掘り','試し掘り'],['ツル切','ツル切り'],['収穫','収穫'],['運搬・入庫','運搬・入庫'],['入庫','運搬・入庫'],['堆肥運搬','堆肥運搬'],['堆肥','堆肥散布'],['緑肥粉砕','緑肥粉砕'],['緑肥','緑肥散布'],['すき込み','残渣すき込み'],['サブソイラ','サブソイラー'],['土壌消毒','土壌消毒'],['ガス抜き','ガス抜き耕運'],['荒耕','荒耕運'],['耕運','耕運'],['畝たて','畝たて・マルチ'],['マルチ','畝たて・マルチ'],['溝きり','溝きり'],['植え付け','植え付け'],['定植','植え付け'],['草刈','草刈り'],['除草','除草剤散布'],['灌水','灌水'],['液肥','液肥・農薬'],['農薬','液肥・農薬'],['整備','機械整備']];
+const AREA_ALIAS=[['河南','河南町'],['古市','羽曳野'],['壺井','羽曳野（玉ねぎ）']];
+const shortTask=v=>String(v).replace(/（.*?）|\(.*?\)/g,'').trim();
+function extractor(){
+  const ws=[];tasks().forEach(t=>{const sh=shortTask(t.v);if(t.v)ws.push([t.v,sh]);if(sh&&sh!==t.v)ws.push([sh,sh])});
+  ws.sort((a,b)=>b[0].length-a[0].length);
+  const words=ws.concat(WORK_ALIAS);
+  const fields=[],areas=[];
+  fieldAreas().forEach(s=>{const a=shortTask(s.area);if(a&&s.area!=='圃場'&&s.area!=='その他')areas.push([a,s.area]);s.items.forEach(i=>{if(String(i.name).length>=2)fields.push(i.name)})});
+  fields.sort((a,b)=>b.length-a.length);areas.sort((a,b)=>b[0].length-a[0].length);
+  const areaWords=areas.concat(AREA_ALIAS);
+  const re=/(河南町|河南|富田林|羽曳野|しまやん|壺井)\s*([0-9０-９]+(?:[-−ー][0-9０-９]+)?)/g;
+  const cut=(s,w)=>s.split(w).join('　');
+  return text=>{
+    const t=String(text||'');let rest=t,r2=t;const works=[],places=[];
+    words.forEach(([w,lb])=>{if(w&&rest.includes(w)){if(!works.includes(lb))works.push(lb);rest=cut(rest,w)}});
+    fields.forEach(f=>{if(r2.includes(f)){places.push(f);r2=cut(r2,f)}});
+    let m;re.lastIndex=0;while((m=re.exec(r2)))places.push((m[1]==='河南'?'河南町':m[1])+m[2]);
+    r2=r2.replace(re,'　');
+    areaWords.forEach(([w,lb])=>{if(r2.includes(w)){if(!places.includes(lb))places.push(lb);r2=cut(r2,w)}});
+    places.sort((a,b)=>t.indexOf(a.slice(0,2))-t.indexOf(b.slice(0,2)));
+    const plain=t.replace(/[\s　]+/g,' ').trim();const head=plain.length>8?plain.slice(0,8)+'…':plain;
+    return {works,places,head,unknown:!works.length&&!!plain,label:(works.length?works.join('・'):head)+(places.length?'｜'+places.join('・'):'')};
+  };
+}
+const exChips=ex=>ex.works.map(w=>`<span class="xw">${esc(w)}</span>`).join('')+(ex.unknown?`<span class="xu">${esc(ex.head)}（作業名なし）</span>`:'')+ex.places.map(p=>`<span class="xp">${esc(p)}</span>`).join('');
+function mfPv(){const el=$('mfPv');if(!el||!MF)return;const t=String(MF.text||'').trim();const ex=extractor()(t);
+  el.className='mfpv'+(t&&ex.unknown?' warn':'');
+  el.innerHTML=`<span class="dim" style="font-weight:700">カレンダーにはこう出ます</span>`+(t?`<span class="pvbar" style="background:${MF.team?teamCol(MF.team):'#545c57'}">${esc(ex.label)}</span>`:`<span class="dim">内容を入れると、ここに出ます</span>`)+(t&&ex.unknown?`<span style="font-size:12px;color:#7a2e0a">作業名が読み取れません。下の作業を押すと文に入ります。</span>`:'')}
+function openMonthItem(x,win){if(x.pending){toast('保存中です');return}MF={dept:'生産',win,id:x.id,team:x.team,from:x.from,to:x.to,text:x.text,tap:false,err:''};render();setTimeout(()=>{const e=$('mfBox');if(e)e.scrollIntoView({behavior:'smooth',block:'start'})},50)}
+function monthCal(m0,mi,all,X,lo,hi,win){
+  const mS=ymd(m0),mE=ymd(lastOf(m0)),dim=lastOf(m0).getDate(),lead=(m0.getDay()+6)%7,mk=ymOf(m0);
+  const items=all.filter(x=>x.from<=mE&&(x.to||x.from)>=mS);
+  const today=ymd(TODAY),hasToday=today>=mS&&today<=mE,MAXL=3;
+  let h=`<section class="card" style="overflow:hidden;min-width:0"><div class="mc-h ${hasToday?'now':''}"><b style="font-size:17px">${m0.getFullYear()}年${m0.getMonth()+1}月${hasToday?'（今月）':''}</b><span class="dim">段取り ${items.length}件</span></div>`;
+  // 目標
+  const cur=(D.monthMemos||[]).find(m=>m.month===mk&&m.dept==='生産');const gkey='生産|'+mk;if(MEMO[gkey]===undefined)MEMO[gkey]=cur?cur.text:'';
+  const ged=MGOAL===mk;
+  h+=`<div class="mc-g"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><span style="font-size:14px;${cur&&cur.text?'font-weight:700':'color:#8a918c'}"><b class="dim" style="margin-right:6px">目標</b>${esc(cur&&cur.text?cur.text:'まだ入っていません')}</span><button class="btn sm" style="flex-shrink:0" data-k="${reg(()=>{MGOAL=ged?'':mk;render()})}">${ged?'閉じる':'直す'}</button></div>`;
+  if(ged)h+=`<textarea class="inp" style="min-height:56px" placeholder="例：河南町の収穫を中旬までに終える" oninput="MEMO['${gkey}']=this.value">${esc(MEMO[gkey])}</textarea><button class="btn sm prod" style="align-self:flex-end" data-k="${reg(async()=>{const text=MEMO[gkey];await save('saveMonthMemo',{month:mk,dept:'生産',text},'保存しました');const i=(D.monthMemos||[]).findIndex(m=>m.month===mk&&m.dept==='生産');const loc={month:mk,dept:'生産',text,by:ME};if(i>=0)D.monthMemos[i]=loc;else (D.monthMemos=D.monthMemos||[]).push(loc);MGOAL='';render()})}">目標を保存</button>`;
+  h+=`</div><div class="mc-dow"><span>月</span><span>火</span><span>水</span><span>木</span><span>金</span><span class="sa">土</span><span class="su">日</span></div>`;
+  // 週ごと
+  const nW=Math.ceil((lead+dim)/7);
+  for(let wi=0;wi<nW;wi++){
+    const dayAt=c=>{const n=wi*7+c-lead+1;return n>=1&&n<=dim?n:0};
+    const keyAt=c=>{const n=dayAt(c);return n?ymd(new Date(m0.getFullYear(),m0.getMonth(),n)):''};
+    const cols=[0,1,2,3,4,5,6],keys=cols.map(keyAt),wk=keys.filter(Boolean),wS=wk[0],wE=wk[wk.length-1];
+    const lanes=[],segs=[],more={};
+    items.forEach(x=>{const xt=x.to||x.from;if(xt<wS||x.from>wE)return;
+      const sK=x.from<wS?wS:x.from,eK=xt>wE?wE:xt,sc=keys.indexOf(sK),ec=keys.indexOf(eK);
+      let ln=0;while(ln<lanes.length&&lanes[ln]>=sc)ln++;
+      if(ln>=MAXL){for(let c=sc;c<=ec;c++)more[c]=(more[c]||0)+1;return}
+      lanes[ln]=ec;const cl=x.from<sK,cr=xt>eK;
+      segs.push(`<button class="sg ${cl?'cl':''} ${cr?'cr':''} ${MF.id&&MF.id===x.id?'on':''}" style="grid-column:${sc+1}/span ${ec-sc+1};grid-row:${ln+2};background:${teamCol(x.team)};${x.pending?'opacity:.6':''}" aria-label="${esc((x.team||'')+'・'+mRange(x)+'・'+x.text)}" data-k="${reg(()=>openMonthItem(x,win))}">${cl?'‹ ':''}${esc(X(x.text).label)}</button>`)});
+    const hasMore=Object.keys(more).length;
+    Object.keys(more).forEach(c=>segs.push(`<button class="more" style="grid-column:${+c+1};grid-row:${MAXL+2}" data-k="${reg(()=>{MOPEN[mk]=true;render()})}">+${more[c]}</button>`));
+    const nR=Math.max(2,Math.min(MAXL,lanes.length))+(hasMore?1:0);
+    h+=`<div class="mwk" style="grid-template-rows:22px repeat(${nR},22px)">`+cols.map(c=>{const n=dayAt(c),k=keys[c];
+      if(!n)return `<span class="dy out" style="grid-column:${c+1}"></span>`;
+      const sel=k>=lo&&k<=hi;
+      return `<button class="dy ${c>=5?'we':''} ${c===5?'sa':c===6?'su':''} ${k===today?'td':''} ${sel?'sel':''}" style="grid-column:${c+1}" aria-label="${m0.getMonth()+1}月${n}日" data-k="${reg(()=>{if(MF.tap&&k>MF.from){MF.to=k;MF.tap=false}else{MF.from=k;MF.to=k;MF.tap=true}MF.err='';render()})}"><span>${n}</span></button>`}).join('')+segs.join('')+`</div>`;
+  }
+  const op=!!MOPEN[mk];
+  h+=`<button class="add" style="color:var(--prod)" aria-expanded="${op}" data-k="${reg(()=>{MOPEN[mk]=!op;render()})}">${op?'一覧を閉じる':`一覧で見る（${items.length}件）`}</button>`;
+  if(op)h+=`<div class="pad stack" style="gap:6px">${items.map(x=>`<button class="mrow ${MF.id===x.id?'on':''}" style="gap:4px;${x.pending?'opacity:.6':''}" data-k="${reg(()=>openMonthItem(x,win))}"><span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="chip" style="background:${teamCol(x.team)};color:#fff">${esc(x.team||'—')}</span><b style="font-size:13px;color:#3a413d">${esc(mRange(x))}</b></span><span style="display:flex;gap:4px;flex-wrap:wrap">${exChips(X(x.text))}</span><span class="dim">「${esc(x.text)}」</span></button>`).join('')||'<span class="dim">段取りはまだありません</span>'}</div>`;
+  return h+`</section>`;
+}
 function prodMonth(){
   const inT=x=>PROD_TEAM==='全体'||x.team===PROD_TEAM||x.team==='全員';
-  const list=mItems('生産').filter(inT).sort((a,b)=>a.from<b.from?-1:a.from>b.from?1:a.to<b.to?-1:1);
-  if(!MF||MF.dept!=='生産'||MF.month!==monthKey()){const d0=inMonth(TODAY)?ymd(TODAY):ymd(mFirst());MF={dept:'生産',month:monthKey(),id:'',team:PROD_TEAM!=='全体'?PROD_TEAM:'',from:d0,to:d0,text:'',tap:false,err:''}}
-  const f=MF;const lo=f.from<f.to?f.from:f.to,hi=f.from<f.to?f.to:f.from;
-  let h=`<div class="memo-note">月間は<b>週間とは別</b>に手で組む段取り表です。週間の予定はここに出ず、ここの予定も週間には出ません。</div>`;
-  h+=memoBox('生産','今月の目標','例：羽曳野・河南町の収穫を中旬までに終える');
-  h+=`<section class="card pad stack" style="gap:8px">`+calGrid(d=>{const k=ymd(d);const cover=list.filter(x=>x.from<=k&&k<=x.to);const sel=k>=lo&&k<=hi;
-    return `<button class="${sel?'sel':''} ${inMonth(d)?'':'out'}" aria-label="${md(d)}${cover.length?'・'+cover.length+'件':''}" data-k="${reg(()=>{if(!inMonth(d))return;if(MF.tap&&k>MF.from){MF.to=k;MF.tap=false}else{MF.from=k;MF.to=k;MF.tap=true}MF.err='';render()})}">${d.getDate()}<span class="bars">${cover.slice(0,3).map(x=>`<i style="background:${teamCol(x.team)}"></i>`).join('')}</span></button>`})+
-    `<div class="chips" style="gap:4px 12px;font-size:12px">${[...teams(),'全員'].map(t=>`<span style="display:inline-flex;align-items:center;gap:4px"><i style="display:inline-block;width:14px;height:5px;border-radius:3px;background:${teamCol(t)}"></i>${esc(t)}</span>`).join('')}</div></section>`;
-  const JUN=[['上旬',1,10],['中旬',11,20],['下旬',21,31]];
-  h+=`<section class="card" style="overflow:hidden"><div class="pad" style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line2)"><h3>今月の段取り</h3><span class="dim">${list.length}件・押すと直せます</span></div>`;
-  JUN.forEach(j=>{const its=list.filter(x=>{const n=Math.max(1,pdt(x.from)<mFirst()?1:pdt(x.from).getDate());return n>=j[1]&&n<=j[2]});
-    h+=`<div class="pad stack" style="gap:6px;padding-top:6px"><span class="dim" style="font-weight:700">${j[0]}（${j[1]}〜${j[2]===31?'末':j[2]}日）に始まる</span>${its.map(x=>`<button class="mrow ${MF.id===x.id?'on':''}" style="${x.pending?'opacity:.6':''}" data-k="${reg(()=>{if(x.pending){toast('保存中です');return}MF={dept:'生産',month:monthKey(),id:x.id,team:x.team,from:x.from,to:x.to,text:x.text,tap:false,err:''};render();setTimeout(()=>{const e=$('mfBox');if(e)e.scrollIntoView({behavior:'smooth',block:'start'})},50)})}"><span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="chip" style="background:${teamCol(x.team)};color:#fff">${esc(x.team||'—')}</span><b style="font-size:13px;color:#3a413d">${esc(mRange(x))}</b></span><span>${esc(x.text)}</span></button>`).join('')||'<span class="dim">なし</span>'}</div>`});
-  h+=`</section>`;
+  const all=mItems('生産').filter(inT).sort((a,b)=>a.from<b.from?-1:a.from>b.from?1:(a.to||a.from)>(b.to||b.from)?-1:1);
+  const ms=M3(),W3=prodWin(),win=W3.s;
+  if(!MF||MF.dept!=='生産'||MF.win!==win){const t=ymd(TODAY);const d0=t>=W3.s&&t<=W3.e?t:W3.s;MF={dept:'生産',win,id:'',team:PROD_TEAM!=='全体'?PROD_TEAM:'',from:d0,to:d0,text:'',tap:false,err:''}}
+  const f=MF;const lo=f.from<f.to?f.from:f.to,hi=f.from<f.to?f.to:f.from;const X=extractor();
+  let h=`<div class="memo-note">月間は<b>週間とは別</b>の段取り表です。帯の文字は、内容の文から「作業｜場所」を読み取ったものです。帯を押すと直せます。</div>`;
+  h+=`<div class="chips" style="gap:4px 12px;font-size:12px;padding:0 2px">${[...teams(),'全員'].map(t=>`<span style="display:inline-flex;align-items:center;gap:4px"><i style="display:inline-block;width:18px;height:10px;border-radius:3px;background:${teamCol(t)}"></i>${esc(t)}</span>`).join('')}</div>`;
+  h+=`<div class="m3">${ms.map((m0,mi)=>monthCal(m0,mi,all,X,lo,hi,win)).join('')}</div>`;
   // 入力
+  const fm=pdt(f.from),fmFirst=new Date(fm.getFullYear(),fm.getMonth(),1),fmLast=lastOf(fmFirst).getDate();
+  const dOf=n=>ymd(new Date(fmFirst.getFullYear(),fmFirst.getMonth(),n));
+  const juns=[['上旬',1,10],['中旬',11,20],['下旬',21,fmLast],['1か月',1,fmLast]];
   const ends=[['開始','from'],['終了','to']];
-  const step=(key,n)=>()=>{const d=addD(pdt(MF[key]),n);if(!inMonth(d))return;MF[key]=ymd(d);if(key==='from'&&MF.from>MF.to)MF.to=MF.from;if(key==='to'&&MF.to<MF.from)MF.from=MF.to;MF.tap=false;MF.err='';render()};
-  const lastN=mLast().getDate();
-  const juns=[['上旬',1,10],['中旬',11,20],['下旬',21,lastN],['1か月',1,lastN]];
-  const dOf=n=>ymd(new Date(MONTH.getFullYear(),MONTH.getMonth(),n));
-  h+=`<section class="card pad stack" id="mfBox" style="gap:10px;border:2px solid #b9cdb9"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="font-size:16px">${f.id?'段取りを直す':'段取りを追加'}</h3>${f.id?`<button class="btn sm" data-k="${reg(()=>{MF=null;render()})}">やめる</button>`:''}</div>
+  const step=(key,n)=>()=>{const v=ymd(addD(pdt(MF[key]),n));if(v<W3.s||v>W3.e)return;MF[key]=v;if(key==='from'&&MF.from>MF.to)MF.to=MF.from;if(key==='to'&&MF.to<MF.from)MF.from=MF.to;MF.tap=false;MF.err='';render()};
+  const fmNo=fm.getMonth()+1;
+  const wks=[];tasks().forEach(t=>{const sh=shortTask(t.v);if(sh&&(!t.months.length||t.months.includes(fmNo))&&!wks.includes(sh))wks.push(sh)});
+  h+=`<section class="card pad stack" id="mfBox" style="gap:10px;border:2px solid #b9cdb9;max-width:720px"><div style="display:flex;justify-content:space-between;align-items:center"><h3 style="font-size:16px">${f.id?'段取りを直す':'段取りを追加'}</h3>${f.id?`<button class="btn sm" data-k="${reg(()=>{MF=null;render()})}">やめる</button>`:''}</div>
     <div class="f"><span class="lb">チーム</span><div class="chips">${[...teams(),'全員'].map(t=>`<button class="pill ${f.team===t?'on':''}" aria-pressed="${f.team===t}" data-k="${reg(()=>{MF.team=t;MF.err='';render()})}">${esc(t)}</button>`).join('')}</div></div>
-    <div class="f"><span class="lb">期間 <span class="dim" style="font-weight:400">（カレンダーで始まりの日→終わりの日の順に押しても入ります）</span></span>
+    <div class="f"><span class="lb">期間 <span class="dim" style="font-weight:400">（カレンダーの日を 始まり→終わり の順に押しても入ります）</span></span>
+      <div class="chips">${ms.map(m0=>{const on=m0.getMonth()===fm.getMonth()&&m0.getFullYear()===fm.getFullYear();return `<button class="pill ${on?'on':''}" aria-pressed="${on}" data-k="${reg(()=>{const d=Math.min(pdt(MF.from).getDate(),lastOf(m0).getDate());const k=ymd(new Date(m0.getFullYear(),m0.getMonth(),d));MF.from=k;MF.to=k;MF.tap=false;render()})}">${m0.getMonth()+1}月</button>`}).join('')}</div>
       <div class="chips">${juns.map(j=>{const on=f.from===dOf(j[1])&&f.to===dOf(j[2]);return `<button class="pill ${on?'on':''}" aria-pressed="${on}" data-k="${reg(()=>{MF.from=dOf(j[1]);MF.to=dOf(j[2]);MF.tap=false;render()})}">${j[0]}</button>`}).join('')}</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${ends.map(([lb,key])=>`<div style="border:1px solid #c9cfc9;border-radius:10px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:4px"><span class="dim">${lb}</span><div class="stepper" style="width:100%;justify-content:space-between"><button aria-label="${lb}を1日前に" data-k="${reg(step(key,-1))}">−</button><b style="white-space:nowrap;font-size:14px">${esc(mdw(pdt(f[key])))}</b><button aria-label="${lb}を1日後に" data-k="${reg(step(key,1))}">＋</button></div></div>`).join('')}</div></div>
-    <div class="f"><span class="lb">内容（自由に）</span><input class="inp" value="${esc(f.text)}" placeholder="例：河南町 収穫／富田林 緑肥まき" oninput="MF.text=this.value"></div>
+    <div class="f"><span class="lb">内容（自由に）</span><input class="inp" value="${esc(f.text)}" placeholder="例：河南町 収穫／富田林 緑肥まき" oninput="MF.text=this.value;mfPv()"><div id="mfPv" class="mfpv"></div>
+      <span class="dim">この時期の作業（押すと文に足す）</span><div class="chips" style="gap:6px">${wks.map(w=>`<button class="pill" style="min-height:40px;font-size:13px;padding:0 10px" data-k="${reg(()=>{const t=String(MF.text||'').trim();if(t.includes(w))return;MF.text=t?t+' '+w:w;render()})}">${esc(w)}</button>`).join('')}</div></div>
     ${f.err?`<div class="err" role="alert">${esc(f.err)}</div>`:''}
     <div style="display:grid;grid-template-columns:${f.id?'1fr 2fr':'1fr'};gap:8px">${f.id?`<button class="btn" style="color:#a3261b;border-color:#d9a9a3" data-k="${reg(async()=>{if(!confirmBtn())return;await save('delMonthItem',{id:f.id},'消しました');D.monthItems=D.monthItems.filter(x=>x.id!==f.id);MF=null;render()})}">削除</button>`:''}<button class="btn prod" data-k="${reg(saveProdMonth)}">${f.id?'保存する':'追加する'}</button></div></section>`;
+  setTimeout(mfPv,0);
   return h;
 }
 async function saveProdMonth(){
