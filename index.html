@@ -190,6 +190,9 @@ textarea.inp{padding:8px 10px;min-height:90px;resize:vertical}
 .pti>.c{padding:6px;border-left:1px solid var(--line2);border-bottom:1px solid var(--line2);display:flex;flex-direction:column;gap:4px;min-height:56px}
 .pti>.c.off{background:#f1f3f5}.pti>.c.today{background:#f5f9fd}
 .pti .it{font-size:12.5px;min-height:34px;padding:4px 6px;line-height:1.35}
+.pend{position:fixed;right:12px;bottom:calc(12px + env(safe-area-inset-bottom));z-index:110;background:#1f5f99;color:#fff;border-radius:18px;padding:6px 14px;font-size:13px;font-weight:700;opacity:0;transform:translateY(10px);transition:.2s;pointer-events:none}
+.pend.on{opacity:1;transform:none}
+.it.pending{opacity:.6;border-style:dashed}
 .qrow .x{min-width:44px;min-height:40px;border:1px solid #d9a9a3;border-radius:8px;background:#fff;color:#a3261b;font-weight:700}
 </style>
 </head>
@@ -231,6 +234,7 @@ textarea.inp{padding:8px 10px;min-height:90px;resize:vertical}
 <main><div class="wrap" id="view"></div></main>
 <div id="drawer"></div>
 <div class="toast" id="toast" role="status"></div>
+<div class="pend" id="pend" role="status" aria-live="polite"></div>
 
 <script>
 'use strict';
@@ -276,6 +280,11 @@ async function api(action,payload){
   }finally{clearTimeout(tm)}
 }
 async function save(action,payload,okMsg){busy(true);try{const r=await api(action,payload);if(okMsg)toast(okMsg);return r}catch(e){toast('保存できませんでした：'+e.message);throw e}finally{busy(false)}}
+/* 保存は裏で行い、画面はすぐ閉じる（待ち時間をなくす）。失敗したら元に戻して知らせる */
+let PENDING=0;
+function pendUI(){const el=$('pend');if(!el)return;el.textContent=PENDING?`保存中…${PENDING>1?'（'+PENDING+'件）':''}`:'';el.classList.toggle('on',PENDING>0)}
+async function saveBg(action,payload,okMsg){PENDING++;pendUI();try{const r=await api(action,payload);if(okMsg)toast(okMsg);return r}catch(e){toast('保存できませんでした：'+e.message);throw e}finally{PENDING--;pendUI()}}
+window.addEventListener('beforeunload',e=>{if(PENDING>0){e.preventDefault();e.returnValue='保存中です'}});
 function range(){
   if(isMonth()){const a=new Date(MONTH.getFullYear(),MONTH.getMonth(),1);const b=new Date(MONTH.getFullYear(),MONTH.getMonth()+1,0);return {from:ymd(monday(a)),to:ymd(addD(monday(b),6))}}
   return {from:ymd(addD(WEEK,-7)),to:ymd(addD(WEEK,6))};
@@ -468,8 +477,8 @@ function planText(p){
 }
 function whoText(p){return String(p.who||'').split('|').filter(Boolean).map(n=>n==='こころ'?`こころ${p.kk||''}`:n).join('・')}
 function planItem(p,compact){const x=planText(p);const w=wxOf(pdt(p.date));const risky=p.dept==='生産'&&p.state==='予定'&&w&&(Number(w.pop)>=50||w.rel==='B'||w.rel==='C');
-  if(p.dept==='生産'){const bt=bandText(p);return `<button class="it prod ${p.state==='完了'?'done':''} ${risky?'warn':''}" data-k="${reg(()=>openPlan(p))}"><span class="h">${bt?`<span class="tb ${bandCls(p.band)}">${esc(bt)}</span>`:''}${!compact?`<span class="chip" style="background:${teamCol(p.team)};color:#fff">${esc(p.team||'—')}</span>`:''}<span class="t">${esc(p.work)}</span></span>${x.s?`<span class="s">${esc(x.s)}</span>`:''}</button>`}
-  return `<button class="it ${p.state==='完了'?'done':''} ${risky?'warn':''}" data-k="${reg(()=>openPlan(p))}">${p.dept==='生産'&&!compact?`<span class="chip" style="background:${teamCol(p.team)};color:#fff;margin-right:6px">${esc(p.team||'—')}</span>`:''}<span class="t">${esc(x.t)}</span>${x.s?`<span class="s">${esc(x.s)}</span>`:''}</button>`}
+  if(p.dept==='生産'){const bt=bandText(p);return `<button class="it prod ${p.state==='完了'?'done':''} ${risky?'warn':''} ${p.pending?'pending':''}" data-k="${reg(()=>openPlan(p))}"><span class="h">${bt?`<span class="tb ${bandCls(p.band)}">${esc(bt)}</span>`:''}${!compact?`<span class="chip" style="background:${teamCol(p.team)};color:#fff">${esc(p.team||'—')}</span>`:''}<span class="t">${esc(p.work)}</span></span>${x.s?`<span class="s">${esc(x.s)}</span>`:''}</button>`}
+  return `<button class="it ${p.state==='完了'?'done':''} ${risky?'warn':''} ${p.pending?'pending':''}" data-k="${reg(()=>openPlan(p))}">${p.dept==='生産'&&!compact?`<span class="chip" style="background:${teamCol(p.team)};color:#fff;margin-right:6px">${esc(p.team||'—')}</span>`:''}<span class="t">${esc(x.t)}</span>${x.s?`<span class="s">${esc(x.s)}</span>`:''}</button>`}
 function routItem(d,r){return `<button class="it rout ${r.off?'off':''}" data-k="${reg(()=>openRoutine(d,r))}">${esc(r.text)}${r.off?'（今週なし）':''}</button>`}
 
 /* --- 生産部 --- */
@@ -532,7 +541,7 @@ function prodMonth(){
   const JUN=[['上旬',1,10],['中旬',11,20],['下旬',21,31]];
   h+=`<section class="card" style="overflow:hidden"><div class="pad" style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line2)"><h3>今月の段取り</h3><span class="dim">${list.length}件・押すと直せます</span></div>`;
   JUN.forEach(j=>{const its=list.filter(x=>{const n=Math.max(1,pdt(x.from)<mFirst()?1:pdt(x.from).getDate());return n>=j[1]&&n<=j[2]});
-    h+=`<div class="pad stack" style="gap:6px;padding-top:6px"><span class="dim" style="font-weight:700">${j[0]}（${j[1]}〜${j[2]===31?'末':j[2]}日）に始まる</span>${its.map(x=>`<button class="mrow ${MF.id===x.id?'on':''}" data-k="${reg(()=>{MF={dept:'生産',month:monthKey(),id:x.id,team:x.team,from:x.from,to:x.to,text:x.text,tap:false,err:''};render();setTimeout(()=>{const e=$('mfBox');if(e)e.scrollIntoView({behavior:'smooth',block:'start'})},50)})}"><span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="chip" style="background:${teamCol(x.team)};color:#fff">${esc(x.team||'—')}</span><b style="font-size:13px;color:#3a413d">${esc(mRange(x))}</b></span><span>${esc(x.text)}</span></button>`).join('')||'<span class="dim">なし</span>'}</div>`});
+    h+=`<div class="pad stack" style="gap:6px;padding-top:6px"><span class="dim" style="font-weight:700">${j[0]}（${j[1]}〜${j[2]===31?'末':j[2]}日）に始まる</span>${its.map(x=>`<button class="mrow ${MF.id===x.id?'on':''}" style="${x.pending?'opacity:.6':''}" data-k="${reg(()=>{if(x.pending){toast('保存中です');return}MF={dept:'生産',month:monthKey(),id:x.id,team:x.team,from:x.from,to:x.to,text:x.text,tap:false,err:''};render();setTimeout(()=>{const e=$('mfBox');if(e)e.scrollIntoView({behavior:'smooth',block:'start'})},50)})}"><span style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="chip" style="background:${teamCol(x.team)};color:#fff">${esc(x.team||'—')}</span><b style="font-size:13px;color:#3a413d">${esc(mRange(x))}</b></span><span>${esc(x.text)}</span></button>`).join('')||'<span class="dim">なし</span>'}</div>`});
   h+=`</section>`;
   // 入力
   const ends=[['開始','from'],['終了','to']];
@@ -554,9 +563,12 @@ async function saveProdMonth(){
   const f=MF;const text=String(f.text||'').trim();const miss=[];if(!f.team)miss.push('チーム');if(!text)miss.push('内容');
   if(miss.length){f.err=miss.join('・')+'を入れてください';return render()}
   const item={id:f.id,dept:'生産',team:f.team,from:f.from<f.to?f.from:f.to,to:f.from<f.to?f.to:f.from,text};
-  const r=await save('saveMonthItem',{item},f.id?'保存しました':'追加しました');
-  const loc={...item,id:r.id,by:ME};const i=D.monthItems.findIndex(x=>x.id===r.id);if(i>=0)D.monthItems[i]=loc;else D.monthItems.push(loc);
+  const prev=f.id?D.monthItems.find(x=>x.id===f.id):null;
+  const loc={...item,id:f.id||('tmp'+Date.now()),by:ME,pending:true};
+  if(prev)D.monthItems[D.monthItems.indexOf(prev)]=loc;else D.monthItems.push(loc);
   MF={...f,id:'',text:'',from:item.from,to:item.from,tap:false,err:''};render();
+  try{const r=await saveBg('saveMonthItem',{item},f.id?'保存しました':'追加しました');loc.id=r.id;loc.pending=false;render()}
+  catch(e){const i=D.monthItems.indexOf(loc);if(i>=0){if(prev)D.monthItems[i]=prev;else D.monthItems.splice(i,1)}MF={...f,err:'保存できませんでした。もう一度押してください'};render()}
 }
 
 /* 流通・営業の月間：週間の予定がそのまま出る＋その日のひとこと */
@@ -572,9 +584,9 @@ function linkedMonth(dept){
   const sd=pdt(sel);const pp=dayPlans(sel),qq=dayQ(sel);
   h+=`<section class="card" style="overflow:hidden"><div class="pad" style="display:flex;justify-content:space-between;align-items:baseline;border-bottom:1px solid var(--line2)"><h3 style="font-size:16px">${esc(mdw(sd))}</h3><button class="btn sm" data-k="${reg(()=>{setWeek(sd);MODE[k0]='week';load()})}">この週を週間で見る ›</button></div><div class="pad stack" style="gap:6px">
     ${pp.map(p=>`<button class="qrow" style="border:none;width:100%;text-align:left" data-k="${reg(()=>openPlan(p))}"><span class="tag2 ok2">週間から</span><span style="flex:1">${esc(planText(p).t)}</span><span class="dim">›</span></button>`).join('')}
-    ${qq.map(x=>`<div class="qrow"><span class="tag2 ca2">月間</span><span style="flex:1">${esc(x.text)}</span><button class="x" aria-label="「${esc(x.text)}」を消す" data-k="${reg(async()=>{if(!confirmBtn())return;await save('delMonthItem',{id:x.id},'消しました');D.monthItems=D.monthItems.filter(y=>y.id!==x.id);render()})}">×</button></div>`).join('')}
+    ${qq.map(x=>`<div class="qrow"><span class="tag2 ca2">月間</span><span style="flex:1">${esc(x.text)}</span><button class="x" aria-label="「${esc(x.text)}」を消す" data-k="${reg(async()=>{if(x.pending){toast('保存中です');return}if(!confirmBtn())return;D.monthItems=D.monthItems.filter(y=>y!==x);render();try{await saveBg('delMonthItem',{id:x.id},'消しました')}catch(e){D.monthItems.push(x);render()}})}">×</button></div>`).join('')}
     ${!pp.length&&!qq.length?'<span class="dim">予定なし</span>':''}
-    <div style="display:flex;gap:6px;margin-top:4px"><input class="inp" id="mqText" placeholder="${dept==='流通'?'ひとことで（例：資材入荷）':'ひとことで（例：〇〇様 訪問）'}" style="flex:1;min-width:0"><button class="btn ${k0}" data-k="${reg(async()=>{const t=String($('mqText').value||'').trim();if(!t){toast('内容を書いてください');return}const item={id:'',dept,team:'',from:sel,to:sel,text:t};const r=await save('saveMonthItem',{item},'追加しました');D.monthItems.push({...item,id:r.id,by:ME});render()})}">追加</button></div>
+    <div style="display:flex;gap:6px;margin-top:4px"><input class="inp" id="mqText" placeholder="${dept==='流通'?'ひとことで（例：資材入荷）':'ひとことで（例：〇〇様 訪問）'}" style="flex:1;min-width:0"><button class="btn ${k0}" data-k="${reg(async()=>{const t=String($('mqText').value||'').trim();if(!t){toast('内容を書いてください');return}const item={id:'',dept,team:'',from:sel,to:sel,text:t};const loc={...item,id:'tmp'+Date.now(),by:ME,pending:true};D.monthItems.push(loc);render();try{const r=await saveBg('saveMonthItem',{item},'追加しました');loc.id=r.id;loc.pending=false}catch(e){D.monthItems=D.monthItems.filter(x=>x!==loc);const el=$('mqText');if(el)el.value=t}render()})}">追加</button></div>
     <span class="dim">細かい予定（だれが・なにを）は週間で入れると、ここにも出ます。</span></div></section>`;
   return h;
 }
@@ -638,7 +650,7 @@ function distCell(p,d){
   const k=ymd(d);const items=[];const offList=offPeople(d);let off=offList.includes(p.key);
   routinesOn(d).filter(r=>r.who===p.key).forEach(r=>items.push(`<button class="it rout ${r.off?'off':''}" data-k="${reg(()=>openRoutine(d,r))}">${r.off?'':'<span class="wkly">毎週</span>'}${esc(r.text)}${r.off?'（今週なし）':''}</button>`));
   plansOn('流通',d).filter(q=>String(q.who||'').split('|').includes(p.key)).forEach(q=>{const others=String(q.who||'').split('|').filter(n=>n&&n!==p.key).map(n=>n==='こころ'?`こころ${q.kk||''}`:n);
-    items.push(`<button class="it pl ${q.state==='完了'?'done':''}" data-k="${reg(()=>openPlan(q))}"><span class="t">${esc(q.work)}${p.key==='こころ'&&q.kk?`　${q.kk}名`:''}</span>${others.length||q.memo?`<span class="s">${others.length?'一緒に：'+esc(others.join('・')):''}${others.length&&q.memo?'　':''}${esc(q.memo||'')}</span>`:''}</button>`)});
+    items.push(`<button class="it pl ${q.state==='完了'?'done':''} ${q.pending?'pending':''}" data-k="${reg(()=>openPlan(q))}"><span class="t">${esc(q.work)}${p.key==='こころ'&&q.kk?`　${q.kk}名`:''}</span>${others.length||q.memo?`<span class="s">${others.length?'一緒に：'+esc(others.join('・')):''}${others.length&&q.memo?'　':''}${esc(q.memo||'')}</span>`:''}</button>`)});
   let head='',headStyle='',sub='';
   const chip=(bg,fg)=>`background:${bg};color:${fg}`;
   if(p.key==='こころ'){const c=kokoroCap(d),u=kokoroUsed(d);if(c){head=`来所${c}名`+(u<c?`・あと${c-u}名`:u>c?`・${u-c}名多い`:'・全員配置');headStyle=u>c?chip('var(--warn-bg)','var(--warn)'):u<c?chip('var(--caut-bg)','var(--caut)'):chip('var(--ok-bg)','var(--ok)')}else off=true}
@@ -705,6 +717,7 @@ const kv=rows=>`<dl class="kv">${rows.filter(r=>r[1]!==''&&r[1]!=null).map(r=>`<
 const actBtns=list=>`<div class="acts">${list.map(a=>`<button class="btn ${a.cls||''}" data-d="${dreg(a.run)}">${esc(a.label)}</button>`).join('')}</div>`;
 
 function openPlan(p){
+  if(p.pending){toast('保存中です。数秒お待ちください');return}
   const x=planText(p);
   const rows=[['日付',mdw(pdt(p.date))],['部署',p.dept]];
   if(p.dept==='生産'){const fl=fieldList(p);const ar=fieldArea(fl);rows.push(['チーム',p.team],['時間帯',bandText(p)],['圃場',fl.length?fl.join('・')+(fl.length>1||ar?`\n（${fl.length}枚${ar?'・計 '+ar+'a':''}）`:''):''],['作業',p.work],['数量',p.qty?`${p.qty}${p.unit||''}`:''],['雨天時',p.rain]);}
@@ -714,8 +727,8 @@ function openPlan(p){
   const w=wxOf(pdt(p.date));if(p.dept==='生産'&&w)rows.push(['天気',`${w.text}・降水${w.pop===''?'—':w.pop+'%'}${w.rel?'・信頼度'+w.rel:''}`]);
   openDw({title:p.dept==='生産'?p.work:x.t,kicker:`${p.dept}${p.team?'・'+p.team:''}・${mdw(pdt(p.date))}`,color:p.dept==='生産'?teamCol(p.team):DCOL[p.dept],body:kv(rows)+actBtns([
     {label:'直す',run:()=>openPlanForm(p.dept,pdt(p.date),p)},
-    {label:p.state==='完了'?'予定に戻す':'完了にする',cls:'pri',run:async()=>{const st=p.state==='完了'?'予定':'完了';await save('setPlanState',{id:p.id,state:st},st==='完了'?'完了にしました':'予定に戻しました');p.state=st;closeDw();render()}},
-    {label:'消す',run:async()=>{if(!confirmBtn(this))return;await save('setPlanState',{id:p.id,state:'削除'},'消しました');D.plans=D.plans.filter(y=>y.id!==p.id);closeDw();render()}},
+    {label:p.state==='完了'?'予定に戻す':'完了にする',cls:'pri',run:async()=>{const old=p.state,st=old==='完了'?'予定':'完了';p.state=st;p.pending=true;closeDw();render();try{await saveBg('setPlanState',{id:p.id,state:st},st==='完了'?'完了にしました':'予定に戻しました')}catch(e){p.state=old}p.pending=false;render()}},
+    {label:'消す',run:async()=>{if(!confirmBtn(this))return;const i=D.plans.indexOf(p);D.plans=D.plans.filter(y=>y!==p);closeDw();render();try{await saveBg('setPlanState',{id:p.id,state:'削除'},'消しました')}catch(e){D.plans.splice(Math.max(0,i),0,p);render()}}},
     {label:`${p.dept}${p.dept==='営業'?'':'部'}のページへ`,run:()=>{TAB=DEPT_KEY[p.dept];closeDw();load()}}
   ])});
 }
@@ -829,10 +842,13 @@ async function submitPlan(){
   else{work=String(f.workFree||'').trim();if(!work){f.err='予定を書いてください';return drawDw()}}
   if(!/^\d{4}-\d{2}-\d{2}$/.test(f.date)){f.err='日付を入れてください';return drawDw()}
   const isP=f.dept==='生産';const plan={id:f.id||'',date:f.date,dept:f.dept,team:isP?f.team:'',field:isP?f.fields.join('|'):'',band:isP?f.band:'',time:isP?f.time:'',work,qty:isP?String(f.qty||''):'',unit:isP&&f.qty?f.unit:'',spot:0,rain:isP?f.rain||'':'',who,kk:/こころ/.test(who)?f.kk:0,memo:f.memo};
-  const r=await save('savePlan',{plan},f.id?'保存しました':'登録しました');
-  const local={...plan,id:r.id,state:'予定',by:ME,at:new Date().toISOString()};
-  const i=D.plans.findIndex(p=>p.id===r.id);if(i>=0){local.state=D.plans[i].state;D.plans[i]=local}else D.plans.push(local);
-  closeDw();render();
+  const prev=f.id?D.plans.find(p=>p.id===f.id):null;
+  const local={...plan,id:f.id||('tmp'+Date.now()),state:prev?prev.state:'予定',by:ME,at:new Date().toISOString(),pending:true};
+  if(prev)D.plans[D.plans.indexOf(prev)]=local;else D.plans.push(local);
+  const dwBack=DW;closeDw();render();
+  try{const r=await saveBg('savePlan',{plan},f.id?'保存しました':'登録しました');local.id=r.id;local.pending=false;render()}
+  catch(e){const i=D.plans.indexOf(local);if(i>=0){if(prev)D.plans[i]=prev;else D.plans.splice(i,1)}render();
+    F=f;F.err='保存できませんでした（'+e.message+'）。もう一度「'+(f.id?'保存する':'登録する')+'」を押してください';openDw(dwBack)}
 }
 
 /* --- 依頼 --- */
