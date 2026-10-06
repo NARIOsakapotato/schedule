@@ -295,7 +295,7 @@ const CACHE_KEY='sched_cache_v1';
 function cacheGet(k){try{const m=JSON.parse(localStorage.getItem(CACHE_KEY)||'{}');const c=m[k];if(c&&c.u===ME&&Date.now()-c.t<12*36e5)return c.d}catch(e){}return null}
 function cachePut(k,d){try{const m=JSON.parse(localStorage.getItem(CACHE_KEY)||'{}');m[k]={u:ME,t:Date.now(),d};const ks=Object.keys(m).sort((a,b)=>m[b].t-m[a].t);ks.slice(4).forEach(x=>delete m[x]);localStorage.setItem(CACHE_KEY,JSON.stringify(m))}catch(e){try{localStorage.removeItem(CACHE_KEY)}catch(x){}}}
 let LOADSEQ=0;
-let JHSEQ=0,JH_LOADING=false,T_MAIN=null,T_JH=null,JH_MS=null;
+let JHSEQ=0,JH_LOADING=false,T_MAIN=null,T_JH=null,JH_MS=null,MAIN_MS=null;
 async function load(force,fresh){
   const r=range();const k=r.from+'|'+r.to;
   if(!force&&D&&LOADKEY===k){render();return}
@@ -306,7 +306,7 @@ async function load(force,fresh){
   const tA=performance.now();
   const jhSeq=++JHSEQ;JH_LOADING=true;T_JH=null;
   const pJh=api('loadJh',{...r,fresh:!!fresh}).then(res=>({res})).catch(err=>({err}));
-  try{const nd=await api('load',{...r,fresh:!!fresh,skipJh:true});if(seq!==LOADSEQ)return;T_MAIN=(performance.now()-tA)/1000;
+  try{const nd=await api('load',{...r,fresh:!!fresh,skipJh:true});if(seq!==LOADSEQ)return;T_MAIN=(performance.now()-tA)/1000;MAIN_MS=nd.ms&&nd.ms.total;
     if(D){(D.plans||[]).filter(p=>p.pending).forEach(p=>{if(!nd.plans.some(x=>x.id===p.id))nd.plans.push(p)});(D.monthItems||[]).filter(x=>x.pending).forEach(x=>{if(!(nd.monthItems||[]).some(y=>y.id===x.id))(nd.monthItems=nd.monthItems||[]).push(x)})}
     // 古いAPI（受発注も一緒に返す）ならそれを使う。新しいAPIなら受発注は別に届くので、届くまでは手元の分を残す
     const oldApi=nd.jh!=null||nd.jhError;
@@ -317,15 +317,16 @@ async function load(force,fresh){
   finally{if(seq===LOADSEQ)busy(false)}
   const j=await pJh;if(jhSeq!==JHSEQ||LOADKEY!==k||!D)return;
   JH_LOADING=false;
-  if(j.res){D.jh=j.res.jh;D.jhError=j.res.jhError||'';T_JH=(performance.now()-tA)/1000;JH_MS=j.res.cached?0:(j.res.ms&&j.res.ms.total);cacheSave(k);lastLoadLabel();render()}
+  if(j.res){D.jh=j.res.jh;D.jhError=j.res.jhError||'';T_JH=(performance.now()-tA)/1000;JH_MS=j.res.cached?0:(j.res.ms&&j.res.ms.total);if(JH_MS==null)JH_MS=null;cacheSave(k);lastLoadLabel();render()}
   else if(!/unknown action/.test(String(j.err&&j.err.message))){D.jhError='受発注を読めませんでした：'+j.err.message;render()}
 }
 function cacheSave(k){cachePut(k,{...D,plans:D.plans.filter(p=>!p.pending),monthItems:(D.monthItems||[]).filter(x=>!x.pending)})}
 // 計測（一時的）：予定と受発注、それぞれ届くまでの秒数
 function lastLoadLabel(){
   const hm=`${pad(TODAY.getHours())}:${pad(TODAY.getMinutes())} 更新`;
-  const a=T_MAIN!=null?`予定${T_MAIN.toFixed(1)}秒`:'';
-  const b=JH_LOADING?'受注 読込中…':T_JH!=null?`受注${T_JH.toFixed(1)}秒${JH_MS===0?'(使い回し)':''}`:'';
+  const sv=ms=>ms!=null?`(処理${(ms/1000).toFixed(1)})`:'';
+  const a=T_MAIN!=null?`予定${T_MAIN.toFixed(1)}秒${sv(MAIN_MS)}`:'';
+  const b=JH_LOADING?'受注 読込中…':T_JH!=null?`受注${T_JH.toFixed(1)}秒${JH_MS===0?'(使い回し)':sv(JH_MS)}`:'';
   $('lastLoad').textContent=[hm,[a,b].filter(Boolean).join('・')].filter(Boolean).join(' ');
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&KEY&&D&&Date.now()-(load._t||0)>60000){load._t=Date.now();load(true)}});
