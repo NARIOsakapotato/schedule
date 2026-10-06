@@ -301,11 +301,14 @@ async function load(force,fresh){
   const seq=++LOADSEQ;
   if(!D||LOADKEY!==k){const c=cacheGet(k);if(c){D=c;LOADKEY=k;render();$('lastLoad').textContent='前回の表示・更新中…'}}
   busy(true);
-  try{const nd=await api('load',{...r,fresh:!!fresh});if(seq!==LOADSEQ)return;
+  const tA=performance.now();
+  try{const nd=await api('load',{...r,fresh:!!fresh});if(seq!==LOADSEQ)return;const tAll=(performance.now()-tA)/1000;
     // 保存中の予定は、新しいデータに残しておく（消えたように見えないように）
     if(D){(D.plans||[]).filter(p=>p.pending).forEach(p=>{if(!nd.plans.some(x=>x.id===p.id))nd.plans.push(p)});(D.monthItems||[]).filter(x=>x.pending).forEach(x=>{if(!(nd.monthItems||[]).some(y=>y.id===x.id))(nd.monthItems=nd.monthItems||[]).push(x)})}
     D=nd;LOADKEY=k;TODAY=new Date();cachePut(k,{...nd,plans:nd.plans.filter(p=>!p.pending),monthItems:(nd.monthItems||[]).filter(x=>!x.pending)});
-    $('lastLoad').textContent=`${pad(TODAY.getHours())}:${pad(TODAY.getMinutes())} 更新`;render()}
+    // 計測（一時的）：かかった時間を更新時刻の横に出す。受発注が0.1秒未満なら使い回し（キャッシュ）
+    const ms=nd.ms||{};const sv=ms.total!=null?(ms.total/1000).toFixed(1):'';const jh=ms.jh!=null?(ms.jh<100?'0':(ms.jh/1000).toFixed(1)):'';
+    $('lastLoad').textContent=`${pad(TODAY.getHours())}:${pad(TODAY.getMinutes())} 更新 ${tAll.toFixed(1)}秒${sv?`（処理${sv}・受注${jh}）`:''}`;render()}
   catch(e){if(seq!==LOADSEQ)return;if(D&&LOADKEY===k){$('lastLoad').textContent='更新できませんでした';toast('最新を読めませんでした：'+e.message)}else $('view').innerHTML=`<div class="err">読み込みに失敗しました：${esc(e.message)}</div>`}
   finally{if(seq===LOADSEQ)busy(false)}
 }
