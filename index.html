@@ -290,13 +290,24 @@ function range(){
   return {from:ymd(addD(WEEK,-7)),to:ymd(addD(WEEK,6))};
 }
 let LOADKEY='';
-async function load(force){
+/* 前回の内容をこの端末に覚えておき、開いた瞬間に表示 → 裏で最新を取り直す */
+const CACHE_KEY='sched_cache_v1';
+function cacheGet(k){try{const m=JSON.parse(localStorage.getItem(CACHE_KEY)||'{}');const c=m[k];if(c&&c.u===ME&&Date.now()-c.t<12*36e5)return c.d}catch(e){}return null}
+function cachePut(k,d){try{const m=JSON.parse(localStorage.getItem(CACHE_KEY)||'{}');m[k]={u:ME,t:Date.now(),d};const ks=Object.keys(m).sort((a,b)=>m[b].t-m[a].t);ks.slice(4).forEach(x=>delete m[x]);localStorage.setItem(CACHE_KEY,JSON.stringify(m))}catch(e){try{localStorage.removeItem(CACHE_KEY)}catch(x){}}}
+let LOADSEQ=0;
+async function load(force,fresh){
   const r=range();const k=r.from+'|'+r.to;
   if(!force&&D&&LOADKEY===k){render();return}
+  const seq=++LOADSEQ;
+  if(!D||LOADKEY!==k){const c=cacheGet(k);if(c){D=c;LOADKEY=k;render();$('lastLoad').textContent='前回の表示・更新中…'}}
   busy(true);
-  try{D=await api('load',r);LOADKEY=k;TODAY=new Date();$('lastLoad').textContent=`${pad(TODAY.getHours())}:${pad(TODAY.getMinutes())} 更新`;render()}
-  catch(e){$('view').innerHTML=`<div class="err">読み込みに失敗しました：${esc(e.message)}</div>`}
-  finally{busy(false)}
+  try{const nd=await api('load',{...r,fresh:!!fresh});if(seq!==LOADSEQ)return;
+    // 保存中の予定は、新しいデータに残しておく（消えたように見えないように）
+    if(D){(D.plans||[]).filter(p=>p.pending).forEach(p=>{if(!nd.plans.some(x=>x.id===p.id))nd.plans.push(p)});(D.monthItems||[]).filter(x=>x.pending).forEach(x=>{if(!(nd.monthItems||[]).some(y=>y.id===x.id))(nd.monthItems=nd.monthItems||[]).push(x)})}
+    D=nd;LOADKEY=k;TODAY=new Date();cachePut(k,{...nd,plans:nd.plans.filter(p=>!p.pending),monthItems:(nd.monthItems||[]).filter(x=>!x.pending)});
+    $('lastLoad').textContent=`${pad(TODAY.getHours())}:${pad(TODAY.getMinutes())} 更新`;render()}
+  catch(e){if(seq!==LOADSEQ)return;if(D&&LOADKEY===k){$('lastLoad').textContent='更新できませんでした';toast('最新を読めませんでした：'+e.message)}else $('view').innerHTML=`<div class="err">読み込みに失敗しました：${esc(e.message)}</div>`}
+  finally{if(seq===LOADSEQ)busy(false)}
 }
 document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='visible'&&KEY&&D&&Date.now()-(load._t||0)>60000){load._t=Date.now();load(true)}});
 
@@ -307,8 +318,8 @@ $('lgOk').onclick=async()=>{ME=$('lgUser').value;KEY=$('lgKey').value;$('lgErr')
   try{await api('ping',{});try{localStorage.setItem('sched_user',ME);localStorage.setItem('sched_key',KEY)}catch(e){}$('login').hidden=true;$('meName').textContent=ME;load(true)}catch(e){$('lgErr').textContent=e.message}};
 $('lgKey').onkeydown=e=>{if(e.key==='Enter'&&!e.isComposing&&e.keyCode!==229)$('lgOk').click()};
 $('lgEye').onclick=()=>{const i=$('lgKey');const show=i.classList.contains('mask');i.classList.toggle('mask',!show);$('lgEye').textContent=show?'隠す':'表示';$('lgEye').setAttribute('aria-pressed',String(show));$('lgEye').setAttribute('aria-label',show?'合言葉を隠す':'合言葉を表示する');i.focus()};
-$('logoutBtn').onclick=()=>{try{localStorage.removeItem('sched_key')}catch(e){}KEY='';showLogin('ログアウトしました')};
-$('reloadBtn').onclick=()=>load(true);
+$('logoutBtn').onclick=()=>{try{localStorage.removeItem('sched_key');localStorage.removeItem(CACHE_KEY)}catch(e){}KEY='';showLogin('ログアウトしました')};
+$('reloadBtn').onclick=()=>load(true,true);
 
 /* ===== ナビ ===== */
 function setWeek(d){WEEK=monday(d);$('wkLabel').textContent=`${mdw(WEEK)} 〜 ${mdw(addD(WEEK,6))}`;}
@@ -846,7 +857,7 @@ async function submitPlan(){
   const local={...plan,id:f.id||('tmp'+Date.now()),state:prev?prev.state:'予定',by:ME,at:new Date().toISOString(),pending:true};
   if(prev)D.plans[D.plans.indexOf(prev)]=local;else D.plans.push(local);
   const dwBack=DW;closeDw();render();
-  try{const r=await saveBg('savePlan',{plan},f.id?'保存しました':'登録しました');local.id=r.id;local.pending=false;render()}
+  try{const r=await saveBg('savePlan',{plan},f.id?'保存しました':'登録しました');local.id=r.id;local.pending=false;D.plans=D.plans.filter(p=>p===local||p.id!==r.id);if(!D.plans.includes(local))D.plans.push(local);render()}
   catch(e){const i=D.plans.indexOf(local);if(i>=0){if(prev)D.plans[i]=prev;else D.plans.splice(i,1)}render();
     F=f;F.err='保存できませんでした（'+e.message+'）。もう一度「'+(f.id?'保存する':'登録する')+'」を押してください';openDw(dwBack)}
 }
