@@ -297,6 +297,7 @@ function cachePut(k,d){try{const m=JSON.parse(localStorage.getItem(CACHE_KEY)||'
 let LOADSEQ=0;
 let JHSEQ=0,JH_LOADING=false,T_MAIN=null,T_JH=null,JH_MS=null,MAIN_MS=null;
 async function load(force,fresh){
+  load._t=Date.now();
   const r=range();const k=r.from+'|'+r.to;
   if(!force&&D&&LOADKEY===k){render();return}
   const seq=++LOADSEQ;
@@ -305,7 +306,7 @@ async function load(force,fresh){
   // 予定と受発注を同時に取りに行く（予定が先に届いたら先に表示）
   const tA=performance.now();
   const jhSeq=++JHSEQ;JH_LOADING=true;T_JH=null;
-  const pJh=api('loadJh',{...r,fresh:!!fresh}).then(res=>({res})).catch(err=>({err}));
+  const pJh=api('loadJh',{...r,fresh:!!fresh}).then(res=>({res,t:(performance.now()-tA)/1000})).catch(err=>({err}));
   try{const nd=await api('load',{...r,fresh:!!fresh,skipJh:true});if(seq!==LOADSEQ)return;T_MAIN=(performance.now()-tA)/1000;MAIN_MS=nd.ms&&nd.ms.total;
     if(D){(D.plans||[]).filter(p=>p.pending).forEach(p=>{if(!nd.plans.some(x=>x.id===p.id))nd.plans.push(p)});(D.monthItems||[]).filter(x=>x.pending).forEach(x=>{if(!(nd.monthItems||[]).some(y=>y.id===x.id))(nd.monthItems=nd.monthItems||[]).push(x)})}
     // 古いAPI（受発注も一緒に返す）ならそれを使う。新しいAPIなら受発注は別に届くので、届くまでは手元の分を残す
@@ -317,9 +318,26 @@ async function load(force,fresh){
   finally{if(seq===LOADSEQ)busy(false)}
   const j=await pJh;if(jhSeq!==JHSEQ||LOADKEY!==k||!D)return;
   JH_LOADING=false;
-  if(j.res){D.jh=j.res.jh;D.jhError=j.res.jhError||'';T_JH=(performance.now()-tA)/1000;JH_MS=j.res.cached?0:(j.res.ms&&j.res.ms.total);if(JH_MS==null)JH_MS=null;cacheSave(k);lastLoadLabel();render()}
+  if(j.res){D.jh=j.res.jh;D.jhError=j.res.jhError||'';T_JH=j.t;JH_MS=j.res.cached?0:(j.res.ms&&j.res.ms.total);if(JH_MS==null)JH_MS=null;cacheSave(k);lastLoadLabel();render()}
   else if(!/unknown action/.test(String(j.err&&j.err.message))){D.jhError='受発注を読めませんでした：'+j.err.message;render()}
+  if(!isMonth())setTimeout(()=>{prefetch(addD(WEEK,7));prefetch(addD(WEEK,-7))},800);
 }
+/* 前後の週を先に読んでおく（週を切り替えた瞬間に表示できるように） */
+const PREF={};
+function prefetch(mon){
+  const r={from:ymd(addD(mon,-7)),to:ymd(addD(mon,6))};const k=r.from+'|'+r.to;
+  try{const m=JSON.parse(localStorage.getItem(CACHE_KEY)||'{}');if(m[k]&&m[k].u===ME&&Date.now()-m[k].t<3*60e3)return}catch(e){}
+  if(PREF[k]&&Date.now()-PREF[k]<3*60e3)return;PREF[k]=Date.now();
+  Promise.all([api('load',{...r,skipJh:true}),api('loadJh',r).catch(()=>null)]).then(([d,j])=>{if(j&&j.jh!==undefined){d.jh=j.jh;d.jhError=j.jhError||''}cachePut(k,d)}).catch(()=>{});
+}
+/* 開いたまま5分たったら、自動で最新にする（入力中・詳細を開いている時はしない） */
+setInterval(()=>{
+  if(document.visibilityState!=='visible'||!KEY||!D||PENDING>0)return;
+  if($('drawer').innerHTML)return;
+  const a=document.activeElement;if(a&&/^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName))return;
+  if(Date.now()-(load._t||0)<5*60e3)return;
+  load._t=Date.now();load(true);
+},60e3);
 function cacheSave(k){cachePut(k,{...D,plans:D.plans.filter(p=>!p.pending),monthItems:(D.monthItems||[]).filter(x=>!x.pending)})}
 // 計測（一時的）：予定と受発注、それぞれ届くまでの秒数
 function lastLoadLabel(){
