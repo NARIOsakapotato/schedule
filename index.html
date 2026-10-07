@@ -975,7 +975,7 @@ function formBody(){
 }
 async function submitPlan(){
   const f=F;let work='',who='';
-  if(f.dept==='生産'){work=String(f.workFree||'').trim()||f.work;const miss=[];if(!f.team)miss.push('チーム');if(!f.band)miss.push('時間帯');if(!f.fields.length)miss.push('圃場');if(!work)miss.push('作業');if(miss.length){f.err=miss.join('・')+'を入れてください';return drawDw()}}
+  if(f.dept==='生産'){work=String(f.workFree||'').trim()||f.work;const miss=[];if(!f.team)miss.push('チーム');if(!f.band)miss.push('時間帯');if(!work)miss.push('作業');if(miss.length){f.err=miss.join('・')+'を入れてください';return drawDw()}}
   else if(f.dept==='流通'){const free=String(f.whoFree||'').split(/[、,・\s]+/).filter(Boolean);who=[...f.who,...free].join('|');const wf=String(f.workFree||'').trim();work=wf?(f.work?`${f.work}（${wf}）`:wf):f.work;if(!who||!work){f.err='「だれが」と「なにを」を入れてください';return drawDw()}}
   else{work=String(f.workFree||'').trim();if(!work){f.err='予定を書いてください';return drawDw()}}
   if(!/^\d{4}-\d{2}-\d{2}$/.test(f.date)){f.err='日付を入れてください';return drawDw()}
