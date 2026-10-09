@@ -200,6 +200,14 @@ textarea.inp{padding:8px 10px;min-height:90px;resize:vertical}
 .wtt{display:grid;min-width:1100px;padding:0 6px 6px 0}
 .wtt .wd{grid-row:1;border:none;border-left:2px solid #c9d0d7;background:var(--soft);display:flex;flex-direction:column;align-items:flex-start;justify-content:center;padding:0 8px;text-align:left;min-height:0}.wtt .wd span{font-size:11px;color:var(--sub)}.wtt .wd.today{background:#e3eefb;box-shadow:inset 0 -3px 0 var(--ink)}.wtt .wd.rain{background:var(--rain-bg)}
 .wtt .wp{grid-row:2;text-align:center;font-size:11px;font-weight:700;color:#fff;line-height:24px;border-left:1px solid #fff}.wtt .wp.d0{border-left:2px solid #fff}
+.sc{margin:4px 2px;padding:7px 8px;border-radius:8px;background:#fff;border:1px solid #d9dee3;display:flex;flex-direction:column;gap:3px;font-size:12px}.sc.bad{background:#fff6f2;border:2px solid #e3a58c}
+.sc .b{display:flex;flex-wrap:wrap;gap:3px;min-height:18px}.sc .ng{font-size:10.5px;font-weight:700;color:#fff;background:#b23a1e;border-radius:4px;padding:0 5px}.sc .ok{font-size:10.5px;font-weight:700;color:#1f6b3a;background:#e3f2e7;border-radius:4px;padding:0 5px}
+.sc .kg{display:flex;align-items:baseline;gap:4px}.sc .kg b{font-size:22px;line-height:1.1}.sc .kg span,.sc .s{font-size:10.5px;color:var(--sub)}
+.sc .bar2{height:6px;border-radius:3px;background:#e6e9ec;overflow:hidden}.sc .bar2 i{display:block;height:100%;background:var(--dist)}
+.sc .dl{display:flex;justify-content:space-between;align-items:baseline;border-top:1px solid #e6e9ec;padding-top:4px}.sc .dl span{font-size:11px;color:var(--sub)}
+.sc .cu{display:flex;justify-content:space-between;gap:4px;border:none;background:transparent;padding:1px 0;font-size:11.5px;text-align:left;min-height:0}.sc .cu span:first-child{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.sc .cu span:last-child{color:var(--sub);white-space:nowrap}.sc .cu:hover{text-decoration:underline}
+.sc .more{border:none;background:transparent;color:var(--dist);font-weight:700;font-size:11px;text-align:left;padding:0;min-height:0}
+.sc .ft{display:flex;justify-content:space-between;align-items:center;border-top:1px solid #e6e9ec;padding-top:4px;font-size:11px}.sc .ft button{border:1px solid #c9d0d7;background:#fff;border-radius:6px;font-size:11px;padding:2px 8px;min-height:0}
 .wtt .wship{grid-row:3;padding:2px 3px;border-left:2px solid #c9d0d7}.wtt .wship .it{font-size:11.5px;min-height:0;padding:3px 6px;line-height:1.3}
 .wtt .wu{grid-row:4;display:flex;flex-direction:column;gap:2px;padding:3px 2px;border-left:1px solid #eef1f4}.wtt .wu.d0,.wtt .tc.d0,.wtt .woff.d0{border-left:2px solid #c9d0d7}
 .wtt .ut{border:none;border-radius:4px;font-size:10.5px;line-height:1.25;padding:2px 4px;text-align:left;min-height:0}.wtt .ut.rout{background:var(--rout-bg);color:#3d2c63;font-weight:700}.wtt .ut.rout.off{text-decoration:line-through;opacity:.6}.wtt .ut.pl{background:#fff;border:1px solid var(--c);color:var(--ink)}
@@ -806,6 +814,25 @@ const tLabel=q=>{const t=tSpan(q);return t?`${t[0]}:00〜${t[1]}:00`:''};
 const byTime=(a,b)=>{const x=hNum(a.time),y=hNum(b.time);return (x==null?-1:x)-(y==null?-1:y)};
 function routBand(d,r,col,s0,row0){const t=tSpan(r);const a=Math.max(s0,t[0]),b=Math.min(TT_E,t[1]);if(b<=a)return '';
   return `<button class="tb rb ${r.off?'off':''}" style="grid-column:${col};grid-row:${a-s0+row0}/span ${b-a};--c:${PCOL[r.who]||'var(--rout)'}" aria-label="毎週の定例 ${esc(r.who)} ${tLabel(r)} ${esc(r.text)}${r.off?'（今週なし）':''}" data-k="${reg(()=>openRoutine(d,r))}"><span class="wk">毎週</span><b>${esc(r.text)}</b><small>${tLabel(r)}${r.off?'・今週なし':''}</small></button>`}
+/* PC：その日の受注カード（受発注アプリから） */
+const SHIPOPEN={};
+function shipCard(d){
+  if(!JH())return `<div class="sc"><span class="dim">${JH_LOADING?'受注 読込中…':'受注なし'}</span></div>`;
+  const x=shipStats(d),cap=JH().capKg,k=ymd(d);
+  const dl=ordersOn('deliver',d).filter(o=>o.status!=='キャンセル').map(o=>({n:o.cust,kg:ordKg(o),o})).sort((a,b)=>b.kg-a.kg);
+  const bad=[];if(x.over)bad.push(`上限超え +${fmt(x.kg-cap)}kg`);if(x.short)bad.push(`袋詰 ${fmt(x.need-x.bcap)}袋不足`);
+  const open=!!SHIPOPEN[k],shown=open?dl:dl.slice(0,3),pct=cap?Math.round(x.kg/cap*100):0;
+  if(!x.kg&&!dl.length&&!x.ship&&!bad.length)return `<div class="sc"><span class="s" style="font-size:12px">受注なし</span><div class="ft"><span>パート ${x.so.n}名・${x.so.h}h</span><button data-k="${reg(()=>openShipDay(d))}">中身 ›</button></div></div>`;
+  return `<div class="sc ${bad.length?'bad':''}">
+    <div class="b">${bad.length?bad.map(t=>`<span class="ng">${esc(t)}</span>`).join(''):'<span class="ok">問題なし</span>'}</div>
+    <div class="kg"><b>${fmt(x.kg)}</b><span>kg 用意</span></div>
+    ${cap?`<div class="bar2"><i style="width:${Math.min(100,pct)}%;${x.over?'background:var(--warn)':''}"></i></div><span class="s">上限 ${fmt(cap)}kg の ${pct}%</span>`:''}
+    <div class="dl"><b>納品 ${dl.length}件</b><span>${x.ship?`発送 ${x.ship}件`:''}</span></div>
+    ${shown.map(c=>`<button class="cu" data-k="${reg(()=>openOrder(c.o))}"><span>${esc(c.n)}</span><span>${fmt(c.kg)}kg</span></button>`).join('')}
+    ${dl.length>3?`<button class="more" data-k="${reg(()=>{SHIPOPEN[k]=!open;render()})}">${open?'▲ たたむ':`▼ ほか${dl.length-3}件`}</button>`:''}
+    <div class="ft"><span>パート ${x.so.n}名・${x.so.h}h</span><button data-k="${reg(()=>openShipDay(d))}">中身 ›</button></div>
+  </div>`;
+}
 /* PC：1週間の時間割（各日に酒井・芳崎・瀬尾の3列） */
 function distWeekTT(days,people){
   const cols=TIMED.map(k=>people.find(p=>p.key===k)).filter(Boolean);if(!cols.length)return '';
@@ -813,7 +840,7 @@ function distWeekTT(days,people){
   let h=`<div class="wtt" style="grid-template-columns:46px repeat(${days.length*n},minmax(0,1fr));grid-template-rows:40px 24px auto auto repeat(${TT_E-S0},34px) 12px">`;
   days.forEach((d,di)=>{const w=wxOf(d);
     h+=`<button class="wd ${isToday(d)?'today':''} ${wxClass(w)==='rain'?'rain':''}" style="grid-column:${cc(di,0)}/span ${n}" data-k="${reg(()=>openDay(d,'流通'))}"><b>${mdw(d)} ›</b><span>${w?`${esc(w.text)} ${w.pop===''?'':w.pop+'%'}`:'&nbsp;'}</span></button>`;
-    h+=`<div class="wship" style="grid-column:${cc(di,0)}/span ${n}">${shipSummary(d)}</div>`;
+    h+=`<div class="wship" style="grid-column:${cc(di,0)}/span ${n}">${shipCard(d)}</div>`;
     const offL=offPeople(d);const all=plansOn('流通',d);
     cols.forEach((p,j)=>{const c=cc(di,j);const mine=all.filter(q=>String(q.who||'').split('|').includes(p.key));const rs=routinesOn(d).filter(r=>r.who===p.key);
       const isOff=offL.includes(p.key)&&!mine.length&&!rs.length;
@@ -827,7 +854,7 @@ function distWeekTT(days,people){
         h+=`<button class="tb ${q.state==='完了'?'done':''} ${q.pending?'pending':''}" style="grid-column:${c};grid-row:${a-S0+R0}/span ${b-a};background:${p.col}" aria-label="${esc(p.short)} ${mdw(d)} ${tLabel(q)} ${esc(q.work)}" data-k="${reg(()=>openPlan(q))}"><b>${esc(q.work)}</b><small>${tLabel(q)}</small></button>`});
     });
   });
-  h+=`<span class="wl" style="grid-row:3">出荷</span><span class="wl" style="grid-row:4;line-height:1.2">時間<br>なし</span>`;
+  h+=`<span class="wl" style="grid-row:3;line-height:1.2">受注<br>出荷</span><span class="wl" style="grid-row:4;line-height:1.2">時間<br>なし</span>`;
   for(let t=S0;t<=TT_E;t++)h+=`<span class="tl ${t===12?'noon':''}" style="grid-row:${t-S0+R0}">${t}:00</span>`;
   return h+`</div>`;
 }
