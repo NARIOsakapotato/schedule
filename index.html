@@ -189,6 +189,14 @@ textarea.inp{padding:8px 10px;min-height:90px;resize:vertical}
 .dtabs button{min-height:56px;border:1px solid #c9d0d7;border-radius:10px;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0;line-height:1.25}
 .dtabs button.rain{background:var(--rain-bg)}.dtabs button.on{border:2px solid var(--dist);background:var(--dist);color:#fff}
 .dtabs button i{width:6px;height:6px;border-radius:3px;margin-top:2px;background:transparent}.dtabs button i.w{background:#b8442a}
+.tt{display:grid;column-gap:4px;padding:0 6px 6px 0}
+.tt .th{grid-row:1;align-self:center;text-align:center;color:#fff;font-weight:700;font-size:14px;border-radius:6px;padding:3px 0;margin-top:2px}.tt .th small{font-weight:400;font-size:11px;margin-left:5px;opacity:.9}
+.tt .tu{grid-row:2;display:flex;flex-direction:column;gap:4px;padding:4px 0}.tt .tu .it{font-size:12px;min-height:32px;padding:3px 6px;line-height:1.3}
+.tt .tl{grid-column:1;font-size:11px;color:var(--sub);text-align:right;padding-right:4px;transform:translateY(-8px)}.tt .tl.noon{color:var(--ink);font-weight:700}
+.tt .tc{border:none;border-top:1px solid #e8ecf0;background:#fff;min-height:0;padding:0}.tt .tc.early{background:#f7f8fa}.tt .tc.noon{border-top-color:#c9d0d7}.tt .tc:hover{background:#eef3f8}
+.tt .tb{z-index:1;margin:2px 0;border:none;border-radius:8px;color:#fff;display:flex;flex-direction:column;align-items:flex-start;justify-content:flex-start;padding:4px 7px;text-align:left;overflow:hidden;min-height:0}
+.tt .tb b{font-size:13.5px;line-height:1.25}.tt .tb small{font-size:11px;opacity:.9}.tt .tb.done{opacity:.55}.tt .tb.pending{opacity:.6}
+.it .tm{font-weight:700;color:var(--dist);margin-right:6px;white-space:nowrap}
 .pc{background:#fff;border:1px solid #dde2e7;border-left:5px solid var(--dist);border-radius:12px;padding:10px 12px;display:flex;flex-direction:column;gap:6px}
 .pc .nm{display:flex;justify-content:space-between;align-items:center;gap:8px}.pc .nm b{font-size:17px}
 .st2{font-size:12px;font-weight:700;border-radius:6px;padding:2px 8px;white-space:nowrap}
@@ -748,7 +756,9 @@ function viewDist(){
       <div style="display:flex;justify-content:space-between;align-items:baseline;gap:8px"><b style="font-size:18px">${mdw(d)}${isToday(d)?'　今日':''}</b><span class="dim">${w?esc(w.text)+' 降水'+(w.pop===''?'—':w.pop+'%'):''}</span></div>
       ${shipSummary(d)}`;
     const off=[];
+    h+=distTimetable(d,people);
     people.forEach(p=>{const c=distCell(p,d);if(c.off&&!c.items.length){off.push(p.name);return}
+      if(TIMED.includes(p.key))return;
       h+=`<article class="pc" style="border-left-color:${p.col}"><div class="nm"><span><b>${esc(p.name)}</b> <span class="dim">${esc(p.role)}</span></span>${c.head?`<span class="st2" style="${c.headStyle}">${esc(c.head)}</span>`:''}</div>${c.sub?`<span class="dim">${esc(c.sub)}</span>`:''}
         ${c.items.join('')||'<span class="dim">まだ入っていません</span>'}
         <div style="display:flex;gap:6px;flex-wrap:wrap"><button class="padd" data-k="${reg(()=>openPlanForm('流通',d,{who:p.whoKey?[p.whoKey]:[]}))}">＋ ${esc(p.name)}の予定</button>${p.key==='こころ'?`<button class="padd" data-k="${reg(()=>openKokoro(d))}">来所人数を変える</button>`:''}</div></article>`});
@@ -775,7 +785,34 @@ function viewDist(){
   return h;
 }
 /* 流通部の人（マスタの流通メンバー＋予定に出てくる人） */
-const PCOL={'酒井':'#4a3577','こころ':'#8a5a00','パート':'#3a4148'};
+const PCOL={'酒井':'#4a3577','芳崎':'#1f5f99','瀬尾':'#2f7a6b','こころ':'#8a5a00','パート':'#3a4148'};
+/* 時間割：酒井・芳崎・瀬尾は 6時〜23時を1時間ごと */
+const TIMED=['酒井','芳崎','瀬尾'],TT_S=6,TT_E=23;
+const hNum=s=>{const m=/^(\d{1,2}):/.exec(String(s||''));return m?Number(m[1]):null};
+const tSpan=q=>{const a=hNum(q.time);if(a==null)return null;let b=hNum(q.end);if(b==null||b<=a)b=a+1;return [a,b]};
+const tLabel=q=>{const t=tSpan(q);return t?`${t[0]}:00〜${t[1]}:00`:''};
+const byTime=(a,b)=>{const x=hNum(a.time),y=hNum(b.time);return (x==null?-1:x)-(y==null?-1:y)};
+function distTimetable(d,people){
+  const offList=offPeople(d);
+  const cols=TIMED.map(k=>people.find(p=>p.key===k)).filter(p=>{if(!p)return false;if(!offList.includes(p.key))return true;const c=distCell(p,d);return c.items.length>0});
+  if(!cols.length)return '';
+  const all=plansOn('流通',d);
+  const mine=k=>all.filter(q=>String(q.who||'').split('|').includes(k));
+  let h=`<section class="card" style="overflow:hidden"><div class="pad" style="padding-bottom:6px"><b>時間割</b> <span class="dim">空いている枠を押すとその時間から入れられます</span></div>`;
+  h+=`<div class="tt" style="grid-template-columns:42px repeat(${cols.length},minmax(0,1fr));grid-template-rows:30px auto repeat(${TT_E-TT_S},44px) 14px">`;
+  cols.forEach((p,i)=>{const hrs=mine(p.key).reduce((a,q)=>{const t=tSpan(q);return a+(t?t[1]-t[0]:0)},0);
+    h+=`<span class="th" style="grid-column:${i+2};background:${p.col}">${esc(p.short)}${hrs?`<small>${hrs}時間</small>`:''}</span>`;
+    const rs=routinesOn(d).filter(r=>r.who===p.key).map(r=>`<button class="it rout ${r.off?'off':''}" data-k="${reg(()=>openRoutine(d,r))}">${r.off?'':'<span class="wkly">毎週</span>'}${esc(r.text)}${r.off?'（今週なし）':''}</button>`);
+    const un=mine(p.key).filter(q=>!tSpan(q)).map(q=>`<button class="it pl ${q.state==='完了'?'done':''} ${q.pending?'pending':''}" data-k="${reg(()=>openPlan(q))}"><span class="t">${esc(q.work)}</span><span class="s">時間なし</span></button>`);
+    h+=`<div class="tu" style="grid-column:${i+2}">${rs.concat(un).join('')}</div>`;
+    for(let t=TT_S;t<TT_E;t++)h+=`<button class="tc ${t<8||t>=18?'early':''} ${t===12?'noon':''}" style="grid-column:${i+2};grid-row:${t-TT_S+3}" aria-label="${esc(p.short)} ${t}:00〜${t+1}:00に予定を入れる" data-k="${reg(()=>openPlanForm('流通',d,{who:[p.key],tf:t,tt:t+1}))}"></button>`;
+    mine(p.key).forEach(q=>{const t=tSpan(q);if(!t)return;const a=Math.max(TT_S,t[0]),b=Math.min(TT_E,t[1]);if(b<=a)return;
+      const others=String(q.who||'').split('|').filter(n=>n&&n!==p.key);
+      h+=`<button class="tb ${q.state==='done'||q.state==='完了'?'done':''} ${q.pending?'pending':''}" style="grid-column:${i+2};grid-row:${a-TT_S+3}/span ${b-a};background:${p.col}" aria-label="${esc(p.short)} ${tLabel(q)} ${esc(q.work)}" data-k="${reg(()=>openPlan(q))}"><b>${esc(q.work)}</b><small>${tLabel(q)}${others.length?'・'+esc(others.join('・')):''}</small></button>`});
+  });
+  for(let t=TT_S;t<=TT_E;t++)h+=`<span class="tl ${t===12?'noon':''}" style="grid-row:${t-TT_S+3}">${t}:00</span>`;
+  return h+`</div></section>`;
+}
 function distPeople(){
   const roles={};MM('流通役割').forEach(r=>roles[r.v]=r.memo);
   const ms=M('流通メンバー');const keys=ms.length?ms.slice():['酒井','芳崎','瀬尾','こころ','パート'];
@@ -787,8 +824,8 @@ function partStaff(d){if(!JH())return null;let h=0,n=0;const names=[];JH().staff
 function distCell(p,d){
   const k=ymd(d);const items=[];const offList=offPeople(d);let off=offList.includes(p.key);
   routinesOn(d).filter(r=>r.who===p.key).forEach(r=>items.push(`<button class="it rout ${r.off?'off':''}" data-k="${reg(()=>openRoutine(d,r))}">${r.off?'':'<span class="wkly">毎週</span>'}${esc(r.text)}${r.off?'（今週なし）':''}</button>`));
-  plansOn('流通',d).filter(q=>String(q.who||'').split('|').includes(p.key)).forEach(q=>{const others=String(q.who||'').split('|').filter(n=>n&&n!==p.key).map(n=>n==='こころ'?`こころ${q.kk||''}`:n);
-    items.push(`<button class="it pl ${q.state==='完了'?'done':''} ${q.pending?'pending':''}" data-k="${reg(()=>openPlan(q))}"><span class="t">${esc(q.work)}${p.key==='こころ'&&q.kk?`　${q.kk}名`:''}</span>${others.length||q.memo?`<span class="s">${others.length?'一緒に：'+esc(others.join('・')):''}${others.length&&q.memo?'　':''}${esc(q.memo||'')}</span>`:''}</button>`)});
+  plansOn('流通',d).filter(q=>String(q.who||'').split('|').includes(p.key)).sort(byTime).forEach(q=>{const others=String(q.who||'').split('|').filter(n=>n&&n!==p.key).map(n=>n==='こころ'?`こころ${q.kk||''}`:n);
+    items.push(`<button class="it pl ${q.state==='完了'?'done':''} ${q.pending?'pending':''}" data-k="${reg(()=>openPlan(q))}"><span class="t">${tLabel(q)?`<span class="tm">${tLabel(q)}</span>`:''}${esc(q.work)}${p.key==='こころ'&&q.kk?`　${q.kk}名`:''}</span>${others.length||q.memo?`<span class="s">${others.length?'一緒に：'+esc(others.join('・')):''}${others.length&&q.memo?'　':''}${esc(q.memo||'')}</span>`:''}</button>`)});
   let head='',headStyle='',sub='';
   const chip=(bg,fg)=>`background:${bg};color:${fg}`;
   if(p.key==='こころ'){const c=kokoroCap(d),u=kokoroUsed(d);if(c){head=`来所${c}名`+(u<c?`・あと${c-u}名`:u>c?`・${u-c}名多い`:'・全員配置');headStyle=u>c?chip('var(--warn-bg)','var(--warn)'):u<c?chip('var(--caut-bg)','var(--caut)'):chip('var(--ok-bg)','var(--ok)')}else off=true}
@@ -859,7 +896,7 @@ function openPlan(p){
   const x=planText(p);
   const rows=[['日付',mdw(pdt(p.date))],['部署',p.dept]];
   if(p.dept==='生産'){const fl=fieldList(p);const ar=fieldArea(fl);rows.push(['チーム',p.team],['時間帯',bandText(p)],['圃場',fl.length?fl.join('・')+(fl.length>1||ar?`\n（${fl.length}枚${ar?'・計 '+ar+'a':''}）`:''):''],['作業',p.work],['数量',p.qty?`${p.qty}${p.unit||''}`:''],['雨天時',p.rain]);}
-  else if(p.dept==='流通')rows.push(['だれが',whoText(p)],['なにを',p.work]);
+  else if(p.dept==='流通')rows.push(['だれが',whoText(p)],['時間',tLabel(p)],['なにを',p.work]);
   else rows.push(['内容',p.work]);
   rows.push(['メモ',p.memo],['状態',p.state],['最終更新',p.by?`${p.by}（${String(p.at).slice(5,16).replace('T',' ')}）`:'']);
   const w=wxOf(pdt(p.date));if(p.dept==='生産'&&w)rows.push(['天気',`${w.text}・降水${w.pop===''?'—':w.pop+'%'}${w.rel?'・信頼度'+w.rel:''}`]);
@@ -927,7 +964,8 @@ let F=null;
 function openPlanForm(dept,d,init){
   const p=init&&init.id?init:null;
   F={dept,id:p?p.id:'',date:ymd(d),team:(init&&init.team)||(dept==='生産'&&PROD_TEAM!=='全体'?PROD_TEAM:''),field:p?p.field:'',fields:p?fieldList(p):[],teamFixed:!p&&dept==='生産'&&(!!(init&&init.team)||PROD_TEAM!=='全体'),band:p?p.band||'':'',time:p?p.time||'':'',timeOpen:!!(p&&p.time),otherOpen:false,area:'',fq:'',work:p?p.work:'',workFree:'',qty:p?p.qty:'',unit:p?p.unit||'a':'a',spot:p?p.spot:0,rain:p?p.rain:'',memo:p?p.memo:'',
-    who:p?String(p.who||'').split('|').filter(Boolean):(init&&init.who?init.who.slice():[]),whoFree:'',kk:p?p.kk||1:1,err:''};
+    who:p?String(p.who||'').split('|').filter(Boolean):(init&&init.who?init.who.slice():[]),whoFree:'',kk:p?p.kk||1:1,err:'',
+    tf:p?(tSpan(p)||[null])[0]:(init&&init.tf!=null?init.tf:null),tt:p?(tSpan(p)||[null,null])[1]:(init&&init.tt!=null?init.tt:null)};
   if(p&&dept==='生産'&&!tasks().some(t=>t.v===p.work)){F.workFree=p.work;F.work=''}
   if(dept==='生産'){const ar=fieldAreas();const hit=ar.find(a=>a.items.some(i=>F.fields.includes(i.name)));F.area=(hit||ar[0]).area}
   if(p&&dept==='流通'){const ws=M('流通作業');if(!ws.includes(p.work)){F.workFree=p.work;F.work=''}const ms=M('流通メンバー');F.whoFree=F.who.filter(x=>!ms.includes(x)).join('、');F.who=F.who.filter(x=>ms.includes(x))}
@@ -964,6 +1002,9 @@ function formBody(){
   }else if(F.dept==='流通'){
     h+=`<div class="f"><span class="lb">だれが（複数OK・選ぶか書く）</span>${chips(M('流通メンバー'),F.who,v=>{const i=F.who.indexOf(v);if(i>=0)F.who.splice(i,1);else F.who.push(v)},true)}${inp('whoFree','一覧にない人・応援など')}</div>`;
     if(F.who.includes('こころ'))h+=`<div class="f"><span class="lb">こころさん 何名？</span><div class="stepper"><button aria-label="減らす" data-d="${dreg(()=>{F.kk=Math.max(1,F.kk-1);drawDw()})}">−</button><b>${F.kk}名</b><button aria-label="増やす" data-d="${dreg(()=>{F.kk=Math.min(20,F.kk+1);drawDw()})}">＋</button></div><span class="dim">この日の来所：${kokoroCap(pdt(F.date)||WEEK)}名／ほかで配置済み：${kokoroUsed(pdt(F.date)||WEEK)}名</span></div>`;
+    const stepT=(k,n)=>{if(k==='tf'){F.tf=Math.max(TT_S,Math.min(TT_E-1,F.tf+n));if(F.tt<=F.tf)F.tt=F.tf+1}else F.tt=Math.max(F.tf+1,Math.min(TT_E,F.tt+n));F.err='';drawDw()};
+    h+=`<div class="f"><span class="lb">何時から何時まで <span class="dim" style="font-weight:400">（酒井・芳崎・瀬尾は時間割に出ます）</span></span>`+(F.tf==null?`<button class="btn ghost sm" style="align-self:flex-start" data-d="${dreg(()=>{F.tf=8;F.tt=9;drawDw()})}">＋ 時間を入れる</button>`:
+      `<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">${[['開始','tf'],['終了','tt']].map(([lb,k])=>`<div style="border:1px solid #c9cfc9;border-radius:10px;padding:6px;display:flex;flex-direction:column;align-items:center;gap:4px"><span class="dim">${lb}</span><div class="stepper" style="width:100%;justify-content:space-between"><button aria-label="${lb}を1時間早く" data-d="${dreg(()=>stepT(k,-1))}">−</button><b style="font-size:17px">${F[k]}:00</b><button aria-label="${lb}を1時間遅く" data-d="${dreg(()=>stepT(k,1))}">＋</button></div></div>`).join('')}</div><button class="btn ghost sm" style="align-self:flex-start" data-d="${dreg(()=>{F.tf=null;F.tt=null;drawDw()})}">時間を外す</button>`)+`</div>`;
     h+=`<div class="f"><span class="lb">なにを（選ぶか書く）</span>${chips(M('流通作業'),F.work,v=>F.work=F.work===v?'':v)}${inp('workFree','例：〇〇様分の選別')}</div>`;
   }else{
     h+=`<div class="f"><span class="lb">予定（自由に書く）</span><textarea class="inp" data-focus placeholder="例：10時 〇〇様訪問、定期便の相談" oninput="F.workFree=this.value">${esc(F.work||F.workFree)}</textarea></div>`;
@@ -976,10 +1017,11 @@ function formBody(){
 async function submitPlan(){
   const f=F;let work='',who='';
   if(f.dept==='生産'){work=String(f.workFree||'').trim()||f.work;const miss=[];if(!f.team)miss.push('チーム');if(!f.band)miss.push('時間帯');if(!work)miss.push('作業');if(miss.length){f.err=miss.join('・')+'を入れてください';return drawDw()}}
-  else if(f.dept==='流通'){const free=String(f.whoFree||'').split(/[、,・\s]+/).filter(Boolean);who=[...f.who,...free].join('|');const wf=String(f.workFree||'').trim();work=wf?(f.work?`${f.work}（${wf}）`:wf):f.work;if(!who||!work){f.err='「だれが」と「なにを」を入れてください';return drawDw()}}
+  else if(f.dept==='流通'){const free=String(f.whoFree||'').split(/[、,・\s]+/).filter(Boolean);who=[...f.who,...free].join('|');const wf=String(f.workFree||'').trim();work=wf?(f.work?`${f.work}（${wf}）`:wf):f.work;if(!who||!work){f.err='「だれが」と「なにを」を入れてください';return drawDw()}
+    if(f.tf!=null){const ws=who.split('|');for(const q of D.plans){if(q.dept!=='流通'||q.date!==f.date||q.id===f.id||q.state==='削除')continue;const t=tSpan(q);if(!t||!(t[0]<f.tt&&f.tf<t[1]))continue;const hit=String(q.who||'').split('|').find(n=>TIMED.includes(n)&&ws.includes(n));if(hit){f.err=`${hit}は ${tLabel(q)} に「${q.work}」が入っています`;return drawDw()}}}}
   else{work=String(f.workFree||'').trim();if(!work){f.err='予定を書いてください';return drawDw()}}
   if(!/^\d{4}-\d{2}-\d{2}$/.test(f.date)){f.err='日付を入れてください';return drawDw()}
-  const isP=f.dept==='生産';const plan={id:f.id||'',date:f.date,dept:f.dept,team:isP?f.team:'',field:isP?f.fields.join('|'):'',band:isP?f.band:'',time:isP?f.time:'',work,qty:isP?String(f.qty||''):'',unit:isP&&f.qty?f.unit:'',spot:0,rain:isP?f.rain||'':'',who,kk:/こころ/.test(who)?f.kk:0,memo:f.memo};
+  const isP=f.dept==='生産';const plan={id:f.id||'',date:f.date,dept:f.dept,team:isP?f.team:'',field:isP?f.fields.join('|'):'',band:isP?f.band:'',time:isP?f.time:(f.dept==='流通'&&f.tf!=null?f.tf+':00':''),end:f.dept==='流通'&&f.tf!=null?f.tt+':00':'',work,qty:isP?String(f.qty||''):'',unit:isP&&f.qty?f.unit:'',spot:0,rain:isP?f.rain||'':'',who,kk:/こころ/.test(who)?f.kk:0,memo:f.memo};
   const prev=f.id?D.plans.find(p=>p.id===f.id):null;
   const local={...plan,id:f.id||('tmp'+Date.now()),state:prev?prev.state:'予定',by:ME,at:new Date().toISOString(),pending:true};
   if(prev)D.plans[D.plans.indexOf(prev)]=local;else D.plans.push(local);
