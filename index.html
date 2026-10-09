@@ -774,6 +774,9 @@ function viewDist(){
   }
   h+=`</div>`;
   // iPad・PC：人×曜日の表
+  {const d=pdt(DIST_DAY);
+  h+=`<div class="dist-wide stack" style="gap:10px;margin-bottom:12px"><div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap"><b style="font-size:18px">時間割　${mdw(d)}${isToday(d)?'　今日':''}</b><div class="dtabs" style="flex:1;max-width:640px">${days.map(x=>{const on=ymd(x)===DIST_DAY;return `<button class="${on?'on':''}" style="min-height:44px" aria-pressed="${on}" data-k="${reg(()=>{DIST_DAY=ymd(x);render()})}"><b style="font-size:13px">${W[x.getDay()]}</b><span style="font-size:11px">${x.getDate()}日</span></button>`}).join('')}</div></div>
+    <div style="max-width:900px">${distTimetable(d,people)||'<span class="dim">この日は時間割の人がみな休みです</span>'}</div></div>`;}
   h+=`<div class="dist-wide"><div class="pt"><div class="pti"><div class="mgh" style="border-left:none"></div>`+days.map(d=>{const w=wxOf(d);return `<button class="mgh ${wxClass(w)==='rain'?'rain':d.getDay()===0?'sun0':''} ${isToday(d)?'today':''}" data-k="${reg(()=>openDay(d,'流通'))}"><b>${mdw(d)} ›</b><span class="w">${w?`${esc(w.text)} ${w.pop===''?'':w.pop+'%'}`:'&nbsp;'}</span></button>`}).join('');
   h+=`<div class="mgl" style="border-left-color:var(--dist)"><b>出荷</b><span class="dim">受発注アプリから</span></div>`+days.map(d=>`<div class="c">${shipSummary(d)}</div>`).join('');
   people.forEach(p=>{h+=`<div class="mgl" style="border-left-color:${p.col}"><b>${esc(p.name)}</b><span class="dim">${esc(p.role)}</span></div>`;
