@@ -455,7 +455,7 @@ const plansOn=(dept,d)=>D.plans.filter(p=>p.dept===dept&&p.date===ymd(d)).sort(d
 function teikyuOf(d){const out=[];String(S('定休','')).split('|').forEach(x=>{const [n,ds]=x.split(':');if(n&&ds&&ds.split(',').map(Number).includes(d.getDay()))out.push(n.trim())});return out}
 function offPeople(d){const out=teikyuOf(d);offsOn('流通',d).filter(o=>o.span==='全休').forEach(o=>{if(!out.includes(o.who))out.push(o.who)});return out}
 /* ===== 休み（その日だけ）：全休・半休（午前）・半休（午後） ===== */
-const OFF_SPANS=['全休','半休（午前）','半休（午後）'],OFF_WHY=['有給','振替','通院','私用'];
+const OFF_SPANS=['全休','半休（午前）','半休（午後）'],OFF_WHY=['振替','通院','私用'];
 const offsOn=(dept,d)=>((D&&D.offs)||[]).filter(o=>o.dept===dept&&o.date===ymd(d));
 const offOf=(dept,d,who)=>offsOn(dept,d).find(o=>o.who===who)||null;
 const offText=o=>o.span+(o.why?'・'+o.why:'');
